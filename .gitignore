@@ -1,0 +1,5 @@
+# NodeJs
+node_modules/
+
+# Mac File System File...utterly useless to anyone but me.
+.DS_Store
