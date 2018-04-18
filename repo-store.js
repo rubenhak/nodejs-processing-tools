@@ -9,9 +9,18 @@ class RepoStore
         this._logger = logger;
 
         this._repositories = {};
+        this._skipFileOutput = false;
 
         this.setupRepository('dirtyRepos', 'DIRTY REPOSITORIES');
         this.setupRepository('suppressed', 'SUPPRESSED DIRTY RESOURCES');
+    }
+
+    get repos() {
+        return _.keys(this._repositories);
+    }
+
+    setSkipFileOutput(value) {
+        this._skipFileOutput = value;
     }
 
     getRepository(name)
@@ -212,6 +221,10 @@ class RepoStore
 
     outputRepository(name)
     {
+        if (this._skipFileOutput) {
+            return;
+        }
+
         var info = this._getRepositoryInfo(name);
         // console.log('***************************************************************');
         // this._logger.info(info.info +  ': ', info.data);
@@ -230,7 +243,7 @@ class RepoStore
 
     outputRepositories()
     {
-        for(var name of _.keys(this._repositories))
+        for(var name of this.repos)
         {
             this.outputRepository(name);
         }
