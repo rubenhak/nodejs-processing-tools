@@ -19,6 +19,9 @@ class DependencyProcessor
         this._handler = handler;
         this._logger = logger;
         this._tasks = {};
+        this._idleTasks = {};
+        this._failedTasks = {};
+        this._runningTasks = {};
         this._currentLabels = {};
         this._isRunning = false;
         this._id = id;
@@ -55,33 +58,26 @@ class DependencyProcessor
 
     _processHealthCheck()
     {
-        if (this._logger) {
-            this._logger.info('Health Check Started...');
-        }
+        this._logger.info('Health Check Started...');
 
         var tasksByState = this.tasksByState;
 
         for (var taskStatus of _.keys(tasksByState))
         {
-            if (this._logger) {
-                this._logger.info('Tasks %s. Count=%s.', taskStatus, tasksByState[taskStatus].length);
-            }
+            this._logger.info('Tasks %s. Count=%s.', taskStatus, tasksByState[taskStatus].length);
         }
 
         for (var taskStatus of _.keys(tasksByState))
         {
-            if (this._logger) {
-                this._logger.info('**** %s Tasks. Count=%s.', taskStatus, tasksByState[taskStatus].length);
-                for(var task of _.orderBy(tasksByState[taskStatus], x => x.dn)) {
-                    this._logger.info('  -> %s is %s...', task.name, taskStatus);
-                }
+            this._logger.info('**** %s Tasks. Count=%s.', taskStatus, tasksByState[taskStatus].length);
+            for(var task of _.orderBy(tasksByState[taskStatus], x => x.dn)) {
+                this._logger.info('  -> %s is %s...', task.name, taskStatus);
+                this._logger.info('     predecessors:', _.keys(task.predecessors));
+
             }
         }
 
-        if (this._logger) {
-            this._logger.info('Health check complete.');
-        }
-
+        this._logger.info('Health check complete.');
     }
 
     addTask(id)
@@ -139,15 +135,15 @@ class DependencyProcessor
                 nonConcurrentLabels: [],
                 completionCheckerCb: null
             };
+
+            this._idleTasks[name] = this._tasks[name];
         }
         return this._tasks[name];
     }
 
     process()
     {
-        if (this._logger) {
-            this._logger.info('Processing started. %s', this._id);
-        }
+        this._logger.info('Processing started. %s', this._id);
 
         this._isStepScheduled = false;
         this._isRunning = true;
@@ -155,7 +151,7 @@ class DependencyProcessor
         return new Promise((resolve, reject) => {
             this._resolveCb = resolve;
             this._rejectCb = reject;
-            this._step();
+            this._step('process');
         });
     }
 
@@ -166,16 +162,15 @@ class DependencyProcessor
         }
         this._isRunning = false;
 
-        if (this._logger) {
-            this._logger.info('Processing stopped. %s', this._id);
-        }
+        this._logger.info('Processing stopped. %s', this._id);
         this._resolveCb = null;
         this._rejectCb = null;
         this._clearHealthChecker();
     }
 
-    _step()
+    _step(callerName)
     {
+        this._logger.info('[_step] begin. callerName: %s', callerName);
         if (this._isStepScheduled) {
             return;
         }
@@ -187,6 +182,7 @@ class DependencyProcessor
 
     _runStep()
     {
+        this._logger.info('[_runStep] begin. isrunning: %s', this._isRunning);
         if (!this._isRunning) {
             return;
         }
@@ -200,74 +196,58 @@ class DependencyProcessor
             }
             this._isInsideStep = true;
 
-            var hasError = false;
-            var hasIdle = false;
-            var hasRunning = false;
-            for(var task of _.values(this._tasks))
-            {
-                if (task.state == TaskState.Idle) {
-                    hasIdle = true;
-                }
-                if (task.state == TaskState.Running || task.state == TaskState.WaitingFinish) {
-                    hasRunning = true;
-                }
-                if (task.state == TaskState.Error) {
-                    hasError = true;
-                }
-            }
+            this._logger.info('[_runStep] failedTasks: %s', _.keys(this._failedTasks).length);
+            this._logger.info('[_runStep] idleTasks: %s', _.keys(this._idleTasks).length);
+            this._logger.info('[_runStep] runningTasks: %s', _.keys(this._runningTasks).length);
 
-            if (hasError) {
+            if (_.keys(this._failedTasks).length > 0) {
                 this._finishWithFailure();
                 return;
             }
 
-            if (!hasIdle && !hasRunning) {
+            if ((_.keys(this._idleTasks).length == 0) && (_.keys(this._runningTasks).length == 0)) {
                 this._finishWithSuccess();
                 return;
             }
 
-            var tasksToRun = [];
-            var tasksToSkip = [];
-            for(var task of _.values(this._tasks))
-            {
-                if (this._canRunTask(task)) {
-                    if (this._checkIfTaskPreRun(task)) {
-                        tasksToRun.push(task);
-                    } else {
-                        tasksToSkip.push(task);
-                    }
-                }
-            }
+            var readyToRunTasks = _.values(this._idleTasks).filter(x => this._arePredecessorsCompleted(x));
+            this._logger.info('[_runStep] readyToRunTasks: %s', readyToRunTasks.length);
+            var nonConcurrentTasksToRun = readyToRunTasks.filter(x => this._areConcurrentLabelsAvailable(x));
+            this._logger.info('[_runStep] nonConcurrentTasksToRun: %s', nonConcurrentTasksToRun.length);
 
+            var tasksToSkip = nonConcurrentTasksToRun.filter(x => !this._checkIfTaskPreRun(x));
             if (tasksToSkip.length > 0)
             {
+                this._logger.info('[_runStep] tasksToSkip: %s', tasksToSkip.length );
                 for(var task of tasksToSkip)
                 {
                     this._markUnqualified(task);
                 }
-
+                this._step('_runStep::afterTaskSkip');
             }
             else
             {
-                for(var task of tasksToRun)
+                this._logger.info('[_runStep] tasksToRun: %s', nonConcurrentTasksToRun.length );
+                for(var task of nonConcurrentTasksToRun)
                 {
-                    if (this._canRunTask(task)) {
+                    var startedTasks = false;
+                    if (this._areConcurrentLabelsAvailable(task))
+                    {
+                        startedTasks = true;
                         this._runTask(task);
+                    }
+                    if (startedTasks) {
+                        setTimeout(() => {
+                            this._step('_runStep::afterTaskStart', 1000);
+                        });
                     }
                 }
             }
 
-            this._step();
-
         } catch (e) {
-            if (this._logger) {
-                this._logger.error('Error in _step.%s ', this._id, e);
-                this._logger.exception(e);
-            } else {
-                console.log(e);
-            }
-
-            this._step();
+            this._logger.error('Error in _step.%s ', this._id, e);
+            this._logger.exception(e);
+            this._step('_runStep::catch');
         } finally {
             this._isInsideStep = false;
         }
@@ -275,19 +255,14 @@ class DependencyProcessor
 
     _markUnqualified(task)
     {
-        task.state = TaskState.Unqualified;
-        if (this._logger) {
-            this._logger.info('Task %s is not qualified.', task.name);
-        }
+        this._markFinalState(task, TaskState.Unqualified, '_markUnqualified');
         this._markDependentsSkipped(task.name);
     }
 
     _checkIfTaskPreRun(task)
     {
         if (task.preRunCheckerCb) {
-            if (this._logger) {
-                this._logger.info('Checking pre run conditions for %s ...', task.name);
-            }
+            this._logger.info('Checking pre run conditions for %s ...', task.name);
             var result = task.preRunCheckerCb();
             this._logger.info('Task %s prerun check result = %s.', task.name, result);
             if (result) {
@@ -301,43 +276,44 @@ class DependencyProcessor
 
     _runTask(task)
     {
-        if (!task.id) {
-            this._logger.warn('Task %s does not have id...', task.name);
-            task.state = TaskState.Complete;
-            this._step();
-            return;
-        }
-        if (this._logger) {
-            this._logger.info('Running %s...', task.name);
-        }
+        this._logger.info('Running %s...', task.name);
+        delete this._idleTasks[task.name];
+        this._runningTasks[task.name] = task;
         task.state = TaskState.Running;
         this._markTaskLabel(task);
+        if (!task.id) {
+            this._logger.warn('Task %s does not have id...', task.name);
+            this._markTaskComplete(task);
+            return;
+        }
 
         Promise.resolve(this._handler(task.id))
             .then(canContinue => {
                 if (canContinue) {
-                    if (this._logger) {
-                        this._logger.info('%s completed.', task.name);
-                    }
+                    this._logger.info('Completed: %s', task.name);
                     return this._runPostTaskFinish(task);
                 } else {
-                    if (this._logger) {
-                        this._logger.info('%s completed but unqualified.', task.name);
-                    }
+                    this._logger.info('Unqualified: %s', task.name);
                     this._markUnqualified(task);
-                    this._step();
+                    this._step('_runTask::unqualified');
                 }
             })
             .catch(error => {
-                if (this._logger) {
-                    this._logger.error('%s failed. Error', task.name, error);
-                } else {
-                    console.log(error);
-                }
-                task.state = TaskState.Error;
-                this._unmarkTaskLabel(task);
-                this._step();
+                this._logger.error('%s failed. Error', task.name, error);
+                this._failedTasks[task.name] = task;
+                this._markFinalState(task, TaskState.Error, '_runTask::catch');
             });
+    }
+
+    _markFinalState(task, state, reason)
+    {
+        this._logger.info('Task %s => %s...', task.name, state);
+
+        delete this._idleTasks[task.name];
+        delete this._runningTasks[task.name];
+        task.state = state;
+        this._unmarkTaskLabel(task);
+        this._step(reason);
     }
 
     _runPostTaskFinish(task)
@@ -350,15 +326,9 @@ class DependencyProcessor
     {
         try {
             if (task.completionCheckerCb) {
-                if (this._logger) {
-                    this._logger.info('Running %s CompletionChecker. CalledFromTimer=%s...', task.name, calledFromTimer);
-                }
-
+                this._logger.info('Running %s CompletionChecker. CalledFromTimer=%s...', task.name, calledFromTimer);
                 var completionResult = task.completionCheckerCb();
-                if (this._logger) {
-                    this._logger.info('Task %s completion result: ', task.name, completionResult);
-                }
-
+                this._logger.info('Task %s completion result: ', task.name, completionResult);
                 if (!completionResult)
                 {
                     this._markUnqualified(task);
@@ -367,9 +337,7 @@ class DependencyProcessor
                 {
                     if (completionResult.ready)
                     {
-                        task.state = TaskState.Complete;
-                        this._unmarkTaskLabel(task);
-                        this._step();
+                        this._markTaskComplete(task);
                     }
                     else
                     {
@@ -387,9 +355,7 @@ class DependencyProcessor
             }
             else
             {
-                task.state = TaskState.Complete;
-                this._unmarkTaskLabel(task);
-                this._step();
+                this._markTaskComplete(task);
             }
         } catch (e) {
             logger.error('Exception inside _checkTaskCompletion', e);
@@ -397,13 +363,16 @@ class DependencyProcessor
         }
     }
 
+    _markTaskComplete(task)
+    {
+        this._markFinalState(task, TaskState.Complete, '_markTaskComplete');
+    }
+
     _markTaskLabel(task)
     {
         for(var label of task.labels)
         {
-            if (this._logger) {
-                this._logger.info('Marking task %s label %s...', task.name, label);
-            }
+            this._logger.info('Marking task %s label %s...', task.name, label);
 
             if (!(label in this._currentLabels)) {
                 this._currentLabels[label] = {};
@@ -416,9 +385,7 @@ class DependencyProcessor
     {
         for(var label of task.labels)
         {
-            if (this._logger) {
-                this._logger.info('Clearing task %s label %s...', task.name, label);
-            }
+            this._logger.info('Clearing task %s label %s...', task.name, label);
 
             if (label in this._currentLabels) {
                 var dict = this._currentLabels[label];
@@ -430,11 +397,8 @@ class DependencyProcessor
         }
     }
 
-    _canRunTask(task)
+    _arePredecessorsCompleted(task)
     {
-        if (task.state != TaskState.Idle) {
-            return false;
-        }
         for(var predecessorName of _.keys(task.predecessors))
         {
             var predecessor = this._tasks[predecessorName];
@@ -444,6 +408,11 @@ class DependencyProcessor
                 }
             }
         }
+        return true;
+    }
+
+    _areConcurrentLabelsAvailable(task)
+    {
         for(var label of task.nonConcurrentLabels) {
             if (label in this._currentLabels) {
                 return false;
@@ -460,11 +429,9 @@ class DependencyProcessor
         for (var task of dependents) {
             if (task.state == TaskState.Idle) {
                 others.push(task);
-                task.state = TaskState.Skipped;
+                this._markFinalState(task, TaskState.Skipped, '_markDependentsSkipped');
 
-                if (this._logger) {
-                    this._logger.info('Skipped task %s.', task.name);
-                }
+                this._logger.info('Skipped task %s.', task.name);
             }
         }
         for (var task of others) {
@@ -490,9 +457,7 @@ class DependencyProcessor
             return;
         }
         var cb = this._resolveCb;
-        if (this._logger) {
-            this._logger.info('Processing completed. %s', this._id);
-        }
+        this._logger.info('Processing completed. %s', this._id);
         this.close();
         cb();
     }
@@ -503,9 +468,7 @@ class DependencyProcessor
             return;
         }
         var cb = this._rejectCb;
-        if (this._logger) {
-            this._logger.error('Processing failed. %s', this._id);
-        }
+        this._logger.error('Processing failed. %s', this._id);
         this.close();
         cb('One or more tasks failed.');
     }
