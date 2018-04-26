@@ -73,7 +73,7 @@ class ConfigStore
 
     output()
     {
-        this._logger.info('ConfigStore: ', this._repo);
+        this._logger.info('Config Store: ', this._repo);
     }
 }
 
