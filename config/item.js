@@ -268,7 +268,7 @@ class ConfigItem
         for(var relation of targetRelations) {
             var baseRelation = _.find(baseRelations, x => x.targetDn == relation.targetDn);
             if (baseRelation) {
-                if (baseRelation.targetId && relation.resolvedtargetId) {
+                if (baseRelation.targetId && relation.resolvedTargetId) {
                     if (!deepEqual(baseRelation.targetId, relation.resolvedTargetId))
                     {
                         deltaRelations.push({
