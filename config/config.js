@@ -295,34 +295,48 @@ class Config
         var toBeRecreatedItems = [];
         for(var item of items)
         {
-            this._logger.verbose('[_markItemsRecreate] %s', item.dn);
-            delta[item.dn] = new ConfigDeltaItem(item, 'recreate');
+            this._markItemRecreate(delta, item, toBeRecreatedItems);
+        }
+        this._markItemsRecreate(delta, toBeRecreatedItems);
+    }
 
-            var relations = this.getSourceRelations(item.dn);
-            for(var relation of relations)
+    _markItemRecreate(delta, item, toBeRecreatedItems)
+    {
+        this._logger.verbose('[_markItemRecreate] %s', item.dn);
+        var currDeltaData = null;
+        if (delta[item.dn]) {
+            if (delta[item.dn].status == 'recreate') {
+                return;
+            }
+            if (delta[item.dn].status == 'update') {
+                currDeltaData = delta[item.dn].delta;
+            }
+        } 
+        delta[item.dn] = new ConfigDeltaItem(item, 'recreate', currDeltaData);
+
+        var relations = this.getSourceRelations(item.dn);
+        for(var relation of relations)
+        {
+            this._logger.verbose('[_markItemRecreate] ?? %s', relation.sourceDn);
+
+            var sourceItem = relation.sourceItem;
+            if (sourceItem.meta._onUpdateRecreateCb)
             {
-                this._logger.verbose('[_markItemsRecreate] ?? %s', relation.sourceDn);
-
-                var sourceItem = relation.sourceItem;
-                if (sourceItem.meta._onUpdateRecreateCb)
+                if (sourceItem.meta._onUpdateRecreateCb(null))
                 {
-                    if (sourceItem.meta._onUpdateRecreateCb(null))
-                    {
-                        if (sourceItem.dn in delta) {
-                            if (delta[sourceItem.dn].status == 'update') {
-                                this._logger.verbose('[_markItemsRecreate] -> %s', sourceItem.dn);
-                                toBeRecreatedItems.push(sourceItem);
-                            }
-                        }
-                        else {
-                            this._logger.verbose('[_markItemsRecreate] => %s', sourceItem.dn);
+                    if (sourceItem.dn in delta) {
+                        if (delta[sourceItem.dn].status == 'update') {
+                            this._logger.verbose('[_markItemRecreate] -> %s', sourceItem.dn);
                             toBeRecreatedItems.push(sourceItem);
                         }
+                    }
+                    else {
+                        this._logger.verbose('[_markItemsRecreate] => %s', sourceItem.dn);
+                        toBeRecreatedItems.push(sourceItem);
                     }
                 }
             }
         }
-        this._markItemsRecreate(delta, toBeRecreatedItems);
     }
 
 
