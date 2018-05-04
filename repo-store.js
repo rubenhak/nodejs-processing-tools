@@ -1,5 +1,7 @@
 const _ = require('lodash');
 const fs = require('fs');
+const path = require('path');
+const shell = require('shelljs');
 const Promise = require('the-promise');
 
 class RepoStore
@@ -11,8 +13,8 @@ class RepoStore
         this._repositories = {};
         this._skipFileOutput = false;
 
-        this.setupRepository('dirtyRepos', 'DIRTY REPOSITORIES');
-        this.setupRepository('suppressed', 'SUPPRESSED DIRTY RESOURCES');
+        this.setupRepository('dirtyRepos', 'DIRTY REPOSITORIES').markDoNotPersist();
+        this.setupRepository('suppressed', 'SUPPRESSED DIRTY RESOURCES').markDoNotPersist();
     }
 
     get repos() {
@@ -31,13 +33,19 @@ class RepoStore
 
     setupRepository(name, info, processorCb, processorLevels)
     {
-        this._repositories[name] = {
+        var repoInfo = {
             name: name,
             info: info,
             processorCb: processorCb,
             processorLevels: processorLevels,
-            data: {}
+            data: {},
+            markDoNotPersist: () => {
+                repoInfo.doNotPersist = true;
+                return repoInfo;
+            }
         };
+        this._repositories[name] = repoInfo;
+        return repoInfo;
     }
 
     at(name, keyPath)
@@ -221,19 +229,24 @@ class RepoStore
 
     outputRepository(name)
     {
-        if (this._skipFileOutput) {
-            return;
-        }
+        // if (this._skipFileOutput) {
+        //     return;
+        // }
+
+        this._logger.info('[outputRepository] %s...', name);
 
         var info = this._getRepositoryInfo(name);
-        // console.log('***************************************************************');
-        // this._logger.info(info.info +  ': ', info.data);
+        this._logger.info('%s: ', info.info, info.data);
 
         this._outputRepositoryToFile(name);
     }
 
     _outputRepositoryToFile(name)
     {
+        if (this._skipFileOutput) {
+            return;
+        }
+
         var fileName = 'logs_berlioz/task-metadata-' + name + '.json';
 
         var writer = fs.createWriteStream(fileName);
@@ -247,6 +260,66 @@ class RepoStore
         {
             this.outputRepository(name);
         }
+    }
+
+    saveToFile(dirPath)
+    {
+        shell.mkdir('-p', dirPath);
+
+        return Promise.serial(_.keys(this._repositories), x => this._saveRepoToFile(x, dirPath));
+    }
+
+    _saveRepoToFile(name, dirPath)
+    {
+        var repoInfo = this._getRepositoryInfo(name);
+        if (repoInfo.doNotPersist) {
+            return;
+        }
+        return new Promise((resolve, reject) => {
+            var filePath = path.join(dirPath, name + '.json');
+            var persistenceData = repoInfo.data;
+            fs.writeFile(filePath, JSON.stringify(persistenceData, null, 4), (err) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                resolve();
+            });
+        });
+    }
+
+    loadFromFile(dirPath)
+    {
+        return Promise.serial(_.keys(this._repositories), x => this._loadRepoFromFile(x, dirPath))
+            .then(() => this.outputRepositories());
+    }
+
+    _loadRepoFromFile(name, dirPath)
+    {
+        var repoInfo = this._getRepositoryInfo(name);
+        if (repoInfo.doNotPersist) {
+            return;
+        }
+        return new Promise((resolve, reject) => {
+            var filePath = path.join(dirPath, name + '.json');
+            this._logger.verbose('[loadRepoFromFile] %s from %s...', name, filePath);
+            if (!fs.existsSync(filePath)) {
+                resolve();
+                return;
+            }
+
+            fs.readFile(filePath, (err, data) => {
+                if (err) {
+                    reject(err);
+                    return;
+                }
+                var persistenceData = JSON.parse(data);
+                this._logger.verbose('[loadRepoFromFile] %s data:', name, persistenceData);
+
+                repoInfo.data = persistenceData;
+                resolve();
+            });
+        });
     }
 
 }

@@ -1,6 +1,6 @@
 {
   "name": "processing-tools",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "",
   "main": "dependency-processor.js",
   "scripts": {
@@ -22,6 +22,7 @@
     "ip": "^1.1.5",
     "lodash": "^4.17.10",
     "pretty-ms": "^3.1.0",
+    "shelljs": "^0.8.1",
     "the-promise": "^1.0.16",
     "toposort": "^1.0.7",
     "uuid": "^3.2.1"
