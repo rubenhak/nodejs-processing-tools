@@ -446,38 +446,50 @@ class ConfigItem
     acceptObj(obj)
     {
         this._logger.verbose('Accepting %s object:', this.dn, obj);
-        this._obj = obj;
-        this._id = this.meta.extractId(obj);
-        this._config = this.meta.extractConfig(obj);
-        this._runtime = this.meta.extractRuntime(obj);
-        this._logger.verbose('Accepted runtime for %s object:', this.dn, this._runtime);
+        return Promise.resolve()
+            .then(() => {
+                this._obj = obj;
+                this._id = this.meta.extractId(obj);
+                return Promise.resolve(this.meta.extractConfig(obj))
+            })
+            .then(result => {
+                this._config = result;
+            })
+            .then(() => {
+                this._runtime = this.meta.extractRuntime(obj);
+                this._logger.verbose('Accepted runtime for %s object:', this.dn, this._runtime);
+            })
+            .then(() => {
+                this.root.deleteRelationsByOwner(this.dn);
+                var relationConstructor = new RelationConstructor(this);
+                this.meta.extractRelations(relationConstructor);
+                return Promise.serial(relationConstructor.relationInfos, x => this._acceptRelationInfo(x))
+            })
+            .then(() => {
+                return this.performPostProcess();
+            })
+            .then(() => this);
+    }
 
-        this.root.deleteRelationsByOwner(this.dn);
-        var relationConstructor = new RelationConstructor(this);
-        this.meta.extractRelations(relationConstructor);
-        return Promise.serial(relationConstructor.relationInfos, info => {
-            var sourceMeta = this.meta.root.get(info.sourceSectionName);
-            var targetMeta = this.meta.root.get(info.targetSectionName);
-            var rel = new ConfigRelation(this.root,
-                                         info.ownerDn,
-                                         sourceMeta, info.sourceNaming,
-                                         targetMeta, info.targetNaming,
-                                         info.targetId,
-                                         info.runtime);
-            rel.sourceLeg.setupAutoCreate(info.sourceAutoCreate, info.sourceAutoCreateRuntime);
-            rel.targetLeg.setupAutoCreate(info.targetAutoCreate, info.targetAutoCreateRuntime);
-            if (info.shouldIgnoreDelta) {
-                rel.markIgnoreDelta();
-            }
-            if (info.shouldIgnoreDependency) {
-                rel.markIgnoreDependency();
-            }
-            return this.root.registerRelation(rel);
-        })
-        .then(() => {
-            return this.performPostProcess();
-        })
-        .then(() => this);
+    _acceptRelationInfo(info)
+    {
+        var sourceMeta = this.meta.root.get(info.sourceSectionName);
+        var targetMeta = this.meta.root.get(info.targetSectionName);
+        var rel = new ConfigRelation(this.root,
+                                     info.ownerDn,
+                                     sourceMeta, info.sourceNaming,
+                                     targetMeta, info.targetNaming,
+                                     info.targetId,
+                                     info.runtime);
+        rel.sourceLeg.setupAutoCreate(info.sourceAutoCreate, info.sourceAutoCreateRuntime);
+        rel.targetLeg.setupAutoCreate(info.targetAutoCreate, info.targetAutoCreateRuntime);
+        if (info.shouldIgnoreDelta) {
+            rel.markIgnoreDelta();
+        }
+        if (info.shouldIgnoreDependency) {
+            rel.markIgnoreDependency();
+        }
+        return this.root.registerRelation(rel);
     }
 
     static createNew(root, meta, naming)
