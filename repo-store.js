@@ -229,14 +229,10 @@ class RepoStore
 
     outputRepository(name)
     {
-        // if (this._skipFileOutput) {
-        //     return;
-        // }
-
-        this._logger.info('[outputRepository] %s...', name);
+        this._logger.silly('[outputRepository] %s...', name);
 
         var info = this._getRepositoryInfo(name);
-        this._logger.info('%s: ', info.info, info.data);
+        this._logger.silly('%s: ', info.info, info.data);
 
         this._outputRepositoryToFile(name);
     }
