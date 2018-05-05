@@ -170,7 +170,7 @@ class DependencyProcessor
 
     _step(callerName)
     {
-        this._logger.info('[_step] begin. callerName: %s', callerName);
+        this._logger.verbose('[_step] begin. callerName: %s', callerName);
         if (this._isStepScheduled) {
             return;
         }
@@ -182,7 +182,7 @@ class DependencyProcessor
 
     _runStep()
     {
-        this._logger.info('[_runStep] begin. isrunning: %s', this._isRunning);
+        this._logger.verbose('[_runStep] begin. isrunning: %s', this._isRunning);
         if (!this._isRunning) {
             return;
         }
@@ -262,9 +262,9 @@ class DependencyProcessor
     _checkIfTaskPreRun(task)
     {
         if (task.preRunCheckerCb) {
-            this._logger.info('Checking pre run conditions for %s ...', task.name);
+            this._logger.verbose('Checking pre run conditions for %s ...', task.name);
             var result = task.preRunCheckerCb();
-            this._logger.info('Task %s prerun check result = %s.', task.name, result);
+            this._logger.verbose('Task %s prerun check result = %s.', task.name, result);
             if (result) {
                 return true;
             } else {

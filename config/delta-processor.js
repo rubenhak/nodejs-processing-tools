@@ -78,7 +78,7 @@ class DeltaProcessor
     {
         var itemId = { dn: item.dn, action: 'delete' };
 
-        this._logger.info('Setup delete item: %s', item.dn);
+        this._logger.verbose('Setup delete item: %s', item.dn);
 
         processor.addTask(itemId);
         if (item.taskLabels) {
@@ -102,7 +102,7 @@ class DeltaProcessor
     _setupCreateItem(processor, item, breakerId)
     {
         var itemId = { dn: item.dn, action: 'create' };
-        this._logger.info('Setup create item: %s', item.dn);
+        this._logger.verbose('Setup create item: %s', item.dn);
 
         processor.addTask(itemId);
         if (item.taskLabels) {
@@ -135,7 +135,7 @@ class DeltaProcessor
     {
         var dn = itemId.dn;
 
-        this._logger.info('process: ' + dn);
+        this._logger.verbose('process: ' + dn);
 
         if (!dn) {
             return true;
@@ -151,12 +151,12 @@ class DeltaProcessor
                     var currentItem = this._currentConfig.findDn(dn);
                     var desiredItem = this._desiredConfig.findDn(dn);
                     if (desiredItem) {
-                        this._logger.info('process: %s BEGIN AUTOCONFIG. Action: %s', dn, itemId.action);
+                        this._logger.verbose('process: %s BEGIN AUTOCONFIG. Action: %s', dn, itemId.action);
 
                         return Promise.resolve(desiredItem.performAutoConfig(itemId.action))
                             .then(canContinue => {
                                 if (!canContinue) {
-                                    this._logger.info('process: %s END AUTOCONFIG :: CANNOT CONTINUE. Action: %s.', dn, itemId.action);
+                                    this._logger.verbose('process: %s END AUTOCONFIG :: CANNOT CONTINUE. Action: %s.', dn, itemId.action);
                                     return false;
                                 }
 
@@ -164,27 +164,27 @@ class DeltaProcessor
                                     var itemDelta = desiredItem.produceDelta(currentItem);
                                     if (itemDelta) {
                                         this._deltaConfig[dn] = new ConfigDeltaItem(desiredItem, 'update', itemDelta);
-                                        this._logger.info('process: %s to be updated after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                        this._logger.verbose('process: %s to be updated after AUTOCONFIG. Action: %s.', dn, itemId.action);
                                         this._deltaConfig[dn].output();
                                         if (desiredItem.meta._onUpdateRecreateCb)
                                         {
                                             if (desiredItem.meta._onUpdateRecreateCb(this._deltaConfig[dn]))
                                             {
-                                                this._logger.info('process: %s Marking Recreatable During AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                                this._logger.verbose('process: %s Marking Recreatable During AUTOCONFIG. Action: %s.', dn, itemId.action);
                                                 this._desiredConfig.markItemRecreateInDelta(this._deltaConfig, desiredItem);
                                             }
                                         }
                                     } else {
-                                        this._logger.info('process: %s no change after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                        this._logger.verbose('process: %s no change after AUTOCONFIG. Action: %s.', dn, itemId.action);
                                         delete this._deltaConfig[dn];
                                     }
                                 } else {
                                     this._deltaConfig[dn] = new ConfigDeltaItem(desiredItem, 'create');
-                                    this._logger.info('process: %s to be created after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                    this._logger.verbose('process: %s to be created after AUTOCONFIG. Action: %s.', dn, itemId.action);
                                     this._deltaConfig[dn].output();
                                 }
 
-                                this._logger.info('process: %s END AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                this._logger.verbose('process: %s END AUTOCONFIG. Action: %s.', dn, itemId.action);
                                 return canContinue;
                             });
                     }
@@ -207,7 +207,7 @@ class DeltaProcessor
                 return true;
             })
             .then(canContinue => {
-                this._logger.info('process: ' + dn + ' :: end');
+                this._logger.verbose('process: ' + dn + ' :: end');
                 return canContinue;
             });
     }
@@ -215,7 +215,7 @@ class DeltaProcessor
     _processDeltaCreate(deltaItem, meta)
     {
         if (deltaItem.status == 'create' || deltaItem.status == 'recreate') {
-            this._logger.info('Process Delta Create %s', deltaItem.dn);
+            this._logger.verbose('Process Delta Create %s', deltaItem.dn);
 
             return Promise.resolve()
                 .then(() => {
@@ -239,7 +239,7 @@ class DeltaProcessor
         }
         else if (deltaItem.status == 'update')
         {
-            this._logger.info('Process Delta Update %s', deltaItem.dn);
+            this._logger.verbose('Process Delta Update %s', deltaItem.dn);
 
             return Promise.resolve()
                 .then(() => {
@@ -267,7 +267,7 @@ class DeltaProcessor
 
     _processDeltaRelationCreate(deltaItem, targetDn)
     {
-        this._logger.info('Creating relation %s => %s...', deltaItem.item.dn, targetDn);
+        this._logger.verbose('Creating relation %s => %s...', deltaItem.item.dn, targetDn);
 
         var target = deltaItem.item.root.findDn(targetDn);
         if (!target) {
@@ -279,7 +279,7 @@ class DeltaProcessor
                 if (!updated) {
                     return updated;
                 }
-                this._logger.info('Relation %s => %s is created. Result:', deltaItem.item.dn, targetDn, updated);
+                this._logger.verbose('Relation %s => %s is created. Result:', deltaItem.item.dn, targetDn, updated);
                 return Promise.resolve()
                     .then(() => this._refreshDeltaItem(deltaItem.item.root, deltaItem.dn))
                     .then(() => this._refreshDeltaItem(target.root, target.dn))
@@ -297,7 +297,7 @@ class DeltaProcessor
 
     _processDeltaRelationDelete(deltaItem, targetDn, runtime)
     {
-        this._logger.info('Deleting relation %s => %s...', deltaItem.item.dn, targetDn);
+        this._logger.verbose('Deleting relation %s => %s...', deltaItem.item.dn, targetDn);
         var target = deltaItem.item.root.resolveDn(targetDn);
         if (!target) {
             this._logger.error('[_processDeltaRelationDelete] Could not fetch target %s for %s', targetDn, deltaItem.item.dn);
@@ -316,7 +316,7 @@ class DeltaProcessor
 
     _refreshDeltaItem(root, dn)
     {
-        this._logger.info('Refreshing %s...', dn);
+        this._logger.verbose('Refreshing %s...', dn);
         var item = root.resolveDn(dn);
         if (!item) {
             this._logger.error('[_refreshDeltaItem] Could not fetch item for %s', dn);
@@ -328,7 +328,7 @@ class DeltaProcessor
     _processDeltaDelete(deltaItem, meta)
     {
         if (deltaItem.status == 'delete' || deltaItem.status == 'recreate') {
-            this._logger.info('Process Delta Delete %s', deltaItem.dn);
+            this._logger.verbose('Process Delta Delete %s', deltaItem.dn);
 
             return Promise.resolve()
                 .then(() => {
@@ -346,7 +346,7 @@ class DeltaProcessor
                 .then(() => true)
                 ;
         } else if (deltaItem.status == 'update') {
-            this._logger.info('Process Delta Delete Updated Relations %s', deltaItem.dn);
+            this._logger.verbose('Process Delta Delete Updated Relations %s', deltaItem.dn);
 
             return Promise.resolve()
                 .then(() => {

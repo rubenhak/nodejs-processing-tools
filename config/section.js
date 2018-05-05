@@ -37,8 +37,8 @@ class ConfigSection
         this._logger.info('Querying section %s', this.meta.name);
         return Promise.resolve(this.meta._queryAll())
             .then(result => {
-                this._logger.info('Querying section %s, Result received.', this.meta.name);
-                this._logger.verbose('Querying section %s, Result:', this.meta.name, result);
+                this._logger.verbose('Querying section %s, Result received.', this.meta.name);
+                this._logger.silly('Querying section %s, Result:', this.meta.name, result);
                 return this._mergeResult(result);
             });
     }
