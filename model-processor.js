@@ -27,6 +27,7 @@ class ModelProcessor
         };
 
         this._iterationStages = {
+            interationInit: null,
             extractCurrent: 'extract-current',
             stabilizeCurrent: null,
             postExtractCurrent: null,
@@ -258,6 +259,8 @@ class ModelProcessor
         this.setSingleStageData('configStore', this.configStore._repo);
 
         return Promise.resolve()
+            .then(() => this._runProcessorStage(this._iterationStages.interationInit))
+
             .then(() => this._runProcessorStage(this._iterationStages.extractCurrent))
             .then(() => this._setCurrentConfigStage('initial'))
 
