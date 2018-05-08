@@ -1,5 +1,5 @@
 const Promise = require('the-promise');
-const _ = require('lodash');
+const _ = require('the-lodash');
 const fs = require('fs');
 const Path = require('path');
 

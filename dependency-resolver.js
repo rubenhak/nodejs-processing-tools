@@ -1,5 +1,5 @@
 const toposort = require('toposort');
-const _ = require('lodash');
+const _ = require('the-lodash');
 
 class DependencyResolver
 {

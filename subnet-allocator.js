@@ -1,5 +1,5 @@
 var ip = require('ip');
-var _ = require('lodash');
+var _ = require('the-lodash');
 
 function subnetToString(subnet)
 {

@@ -1,5 +1,5 @@
 const Promise = require('the-promise');
-const _ = require('lodash');
+const _ = require('the-lodash');
 const fs = require('fs');
 const Path = require('path');
 const prettyMs = require('pretty-ms');
@@ -255,8 +255,6 @@ class ModelProcessor
         if (this._lastDeltaConfig) {
             this.setSingleStageData('lastDeltaConfig', this._lastDeltaConfig);
         }
-
-        this.setSingleStageData('configStore', this.configStore._repo);
 
         return Promise.resolve()
             .then(() => this._runProcessorStage(this._iterationStages.interationInit))

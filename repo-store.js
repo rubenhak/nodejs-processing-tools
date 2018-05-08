@@ -1,4 +1,4 @@
-const _ = require('lodash');
+const _ = require('the-lodash');
 const fs = require('fs');
 const path = require('path');
 const shell = require('shelljs');

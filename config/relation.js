@@ -1,6 +1,6 @@
 const fs = require('fs');
 const deepEqual = require('deep-equal')
-const _ = require('lodash');
+const _ = require('the-lodash');
 const Promise = require('the-promise');
 
 const RootMeta = require('./meta');

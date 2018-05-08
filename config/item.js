@@ -1,6 +1,6 @@
 const fs = require('fs');
 const Promise = require('the-promise');
-const _ = require('lodash');
+const _ = require('the-lodash');
 const deepEqual = require('deep-equal');
 
 const ConfigRelation = require('./relation');
