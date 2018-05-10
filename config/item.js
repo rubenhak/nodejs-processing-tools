@@ -207,6 +207,11 @@ class ConfigItem
         return relations;
     }
 
+    getOwnedRelations()
+    {
+        return this._root.getOwnedRelations(this.dn);
+    }
+
     getRelationByTargetDn(targetSectionName, dn)
     {
         var relations = this.relations.filter(x => x.targetDn == dn);

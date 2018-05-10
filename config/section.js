@@ -140,10 +140,10 @@ class ConfigSection
     cloneFrom(otherConfig, skipRelations, relationFilter)
     {
         return Promise.serial(otherConfig.section(this.meta.name).items,
-                              x => this._cloneSingleItem(otherConfig, x, skipRelations, relationFilter));
+                              x => this.cloneSingleItemFrom(x, skipRelations, relationFilter));
     }
 
-    _cloneSingleItem(otherConfig, otherItem, skipRelations, relationFilter)
+    cloneSingleItemFrom(otherItem, skipRelations, relationFilter)
     {
         return Promise.resolve()
             .then(() => {
@@ -154,7 +154,7 @@ class ConfigSection
                 if(skipRelations) {
                     return;
                 }
-                return Promise.serial(otherConfig.getOwnedRelations(otherItem.dn), otherRelation => {
+                return Promise.serial(otherItem.getOwnedRelations(), otherRelation => {
                     if (relationFilter) {
                         if ((!_.includes(relationFilter, otherRelation.sourceMeta.name)) &&
                             (!_.includes(relationFilter, otherRelation.targetMeta.name)))
