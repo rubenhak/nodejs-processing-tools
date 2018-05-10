@@ -7,6 +7,7 @@ const prettyMs = require('pretty-ms');
 const ConfigMeta = require('./config/meta');
 const Config = require('./config').Config;
 const DeltaProcessor = require('./config').DeltaProcessor;
+const ConfigStore = require('./config-store');
 
 class ModelProcessor
 {
@@ -25,6 +26,8 @@ class ModelProcessor
             _: _,
             helper: this
         };
+
+        this._configStore = new ConfigStore(this._logger.sublogger('ConfigStore'));
 
         this._iterationStages = {
             interationInit: null,
@@ -74,6 +77,17 @@ class ModelProcessor
         /********/
     }
 
+    get configStore() {
+        return this._configStore;
+    }
+
+    get singleStageData() {
+        if (!this._singleStageData) {
+            this._singleStageData = {};
+        }
+        return this._singleStageData;
+    }
+
     _extractCurrent()
     {
         return this._extractConfig()
@@ -93,13 +107,6 @@ class ModelProcessor
         } else {
             this._desiredConfig = new Config(this._configMeta, this._currentConfig);
         }
-    }
-
-    get singleStageData() {
-        if (!this._singleStageData) {
-            this._singleStageData = {};
-        }
-        return this._singleStageData;
     }
 
     setSingleStageData(name, value)
@@ -156,6 +163,28 @@ class ModelProcessor
         return Promise.resolve()
             .then(() => this._setupConfigMeta())
             .then(() => this._finalizeSetup());
+    }
+
+    addConfigEntries(configEntries)
+    {
+        for(var x of configEntries)
+        {
+            this._addConfigEntry(x);
+        }
+        this.configStore.output();
+    }
+
+    _addConfigEntry(entry)
+    {
+        var entryPath = [
+            entry.deployment,
+            entry.cluster,
+            entry.region,
+            entry.service,
+            entry.endpoint
+        ];
+        entryPath = entryPath.filter(x => _.isNotNullOrUndefined(x));
+        this.configStore.setValue(entryPath, entry.property, entry.value);
     }
 
     newIteration()
@@ -262,6 +291,10 @@ class ModelProcessor
 
         if (this._lastDeltaConfig) {
             this.setSingleStageData('lastDeltaConfig', this._lastDeltaConfig);
+        }
+
+        if (this.configStore) {
+            this.setSingleStageData('configStore', this.configStore._repo);
         }
 
         return Promise.resolve()
