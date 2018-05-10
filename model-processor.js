@@ -174,15 +174,13 @@ class ModelProcessor
         this.configStore.output();
     }
 
+    _extractConfigEntryPath(entry) {
+        return null;
+    }
+
     _addConfigEntry(entry)
     {
-        var entryPath = [
-            entry.deployment,
-            entry.cluster,
-            entry.region,
-            entry.service,
-            entry.endpoint
-        ];
+        var entryPath = this._extractConfigEntryPath(entry);
         entryPath = entryPath.filter(x => _.isNotNullOrUndefined(x));
         this.configStore.setValue(entryPath, entry.property, entry.value);
     }
