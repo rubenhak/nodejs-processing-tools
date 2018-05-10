@@ -307,7 +307,7 @@ class ModelProcessor
         if (!stage) {
             return;
         }
-        if (this.singleStageResult.skipProcess) {
+        if (this.singleStageResult.skipFurtherStages) {
             this._logger.info('Skipping stage %s...', stage);
             return;
         }
