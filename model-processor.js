@@ -218,6 +218,10 @@ class ModelProcessor
 
     _outputCurrentConfig()
     {
+        if (!this._currentConfig) {
+            return;
+        }
+
         this.setSingleStageData(this._currentConfigStage + 'CurrentConfig', this._currentConfig.exportToData());
 
         if (this._skipFileOutput) {
@@ -237,6 +241,10 @@ class ModelProcessor
 
     _outputDesiredConfig()
     {
+        if (!this._desiredConfig) {
+            return;
+        }
+
         this.setSingleStageData(this._desiredConfigStage + 'DesiredConfig', this._desiredConfig.exportToData());
 
         if (this._skipFileOutput) {
@@ -415,6 +423,10 @@ class ModelProcessor
 
     _extractDelta()
     {
+        if (!this._desiredConfig || !this._currentConfig) {
+            return {};
+        }
+
         var deltaConfig = this._desiredConfig.produceDelta(this._currentConfig);
         // this._logger.info('******** COMPLETE DELTA ********');
         // this._logger.info('%s', '', deltaConfig);
