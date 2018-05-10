@@ -1,4 +1,4 @@
-var _ = require('the-lodash');
+const _ = require('the-lodash');
 
 class ConfigStore
 {
@@ -18,6 +18,18 @@ class ConfigStore
     resolveValue(path, property)
     {
         return this._resolveValue(this._repo, path, property);
+    }
+
+    resolveBoolValue(path, property)
+    {
+        var value = this.resolveValue(path, property);
+        if (_.isBoolean(value)) {
+            return value;
+        }
+        if (value == 'true' || value == 'yes') {
+            return true;
+        }
+        return false;
     }
 
     _resolveValue(repo, path, property)
