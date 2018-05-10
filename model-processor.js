@@ -424,7 +424,7 @@ class ModelProcessor
     _extractDelta()
     {
         if (!this._desiredConfig || !this._currentConfig) {
-            return {};
+            return [];
         }
 
         var deltaConfig = this._desiredConfig.produceDelta(this._currentConfig);
