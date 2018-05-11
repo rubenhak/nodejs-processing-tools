@@ -163,7 +163,7 @@ class DeltaProcessor
                                 if (currentItem) {
                                     var itemDelta = desiredItem.produceDelta(currentItem);
                                     if (itemDelta) {
-                                        this._deltaConfig[dn] = new ConfigDeltaItem(desiredItem, 'update', itemDelta);
+                                        desiredItem.addToDeltaDict(this._deltaConfig, 'update', itemDelta);
                                         this._logger.verbose('process: %s to be updated after AUTOCONFIG. Action: %s.', dn, itemId.action);
                                         this._deltaConfig[dn].output();
                                         if (desiredItem.meta._onUpdateRecreateCb)
@@ -179,7 +179,7 @@ class DeltaProcessor
                                         delete this._deltaConfig[dn];
                                     }
                                 } else {
-                                    this._deltaConfig[dn] = new ConfigDeltaItem(desiredItem, 'create');
+                                    desiredItem.addToDeltaDict(this._deltaConfig, 'create');
                                     this._logger.verbose('process: %s to be created after AUTOCONFIG. Action: %s.', dn, itemId.action);
                                     this._deltaConfig[dn].output();
                                 }

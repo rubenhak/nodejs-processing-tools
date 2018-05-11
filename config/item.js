@@ -312,6 +312,16 @@ class ConfigItem
         return null;
     }
 
+    addToDeltaDict(deltaDict, state, itemDelta)
+    {
+        if (this.meta._onCheckIgnoreDelta) {
+            if (this.meta._onCheckIgnoreDelta(this, state, itemDelta)) {
+                return;
+            }
+        }
+        deltaDict[this.dn] = new ConfigDeltaItem(this, state, itemDelta);
+    }
+
     refresh()
     {
         if (!this.isConfig) {

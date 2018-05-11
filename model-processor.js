@@ -168,7 +168,7 @@ class ModelProcessor
 
     _preSetup()
     {
-        
+
     }
 
     addConfigEntries(configEntries)
@@ -363,7 +363,9 @@ class ModelProcessor
         this.setSingleStageData(this._deltaStage + 'Delta', deltaConfig);
 
         this._logger.info('******** ' + this._deltaStage + ' DELTA ********');
-        this._logger.info('%s', deltaConfig);
+        for(var x of deltaConfig) {
+            this._logger.info(x);
+        }
         this._debugOutputDeltaToFile(this._deltaStage, deltaConfig);
     }
 

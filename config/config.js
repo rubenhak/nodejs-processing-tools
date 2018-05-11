@@ -311,8 +311,8 @@ class Config
             if (delta[item.dn].status == 'update') {
                 currDeltaData = delta[item.dn].delta;
             }
-        } 
-        delta[item.dn] = new ConfigDeltaItem(item, 'recreate', currDeltaData);
+        }
+        item.addToDeltaDict(delta, 'recreate', currDeltaData);
 
         var relations = this.getSourceRelations(item.dn);
         for(var relation of relations)

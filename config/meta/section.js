@@ -13,6 +13,7 @@ class ConfigSectionMeta
         this._onPostRelationCreate = {};
         this._actions = {};
         this._ignoreDelta = false;
+        this._onCheckIgnoreDelta = null;
     }
 
     get ignoreDelta() {
@@ -185,6 +186,16 @@ class ConfigSectionMeta
         this._postProcess = callback;
         return this;
     }
+
+    onCheckIgnoreDelta(callback)
+    {
+        if (this._onCheckIgnoreDelta) {
+            throw new Error('Already present');
+        }
+        this._onCheckIgnoreDelta = callback;
+        return this;
+    }
+
 
     done()
     {

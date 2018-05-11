@@ -92,15 +92,15 @@ class ConfigSection
             if (baseItem) {
                 var itemDelta = item.produceDelta(baseItem);
                 if (itemDelta) {
-                    delta[item.dn] = new ConfigDeltaItem(item, 'update', itemDelta);
+                    item.addToDeltaDict(delta, 'update', itemDelta);
                 }
                 _.remove(baseItems, x => x === baseItem);
             } else {
-                delta[item.dn] = new ConfigDeltaItem(item, 'create');
+                item.addToDeltaDict(delta, 'create');
             }
         }
         for(var item of baseItems) {
-            delta[item.dn] = new ConfigDeltaItem(item, 'delete');
+            item.addToDeltaDict(delta, 'delete');
         }
     }
 
