@@ -161,8 +161,14 @@ class ModelProcessor
     {
         this._logger.info('Setup...');
         return Promise.resolve()
+            .then(() => this._preSetup())
             .then(() => this._setupConfigMeta())
             .then(() => this._finalizeSetup());
+    }
+
+    _preSetup()
+    {
+        
     }
 
     addConfigEntries(configEntries)
