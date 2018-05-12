@@ -344,6 +344,10 @@ class ModelProcessor
         if (!stage) {
             return;
         }
+        if (_.isArray(stage)) {
+            return Promise.serial(stage, x => this._runProcessorStage(x));
+        }
+
         if (this.singleStageResult.skipFurtherStages) {
             this._logger.info('Skipping stage %s...', stage);
             return;
