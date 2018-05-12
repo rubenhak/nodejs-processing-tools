@@ -5,7 +5,6 @@ const _ = require('the-lodash');
 
 const ConfigSection = require('./section');
 const ConfigRelation = require('./relation');
-const ConfigDeltaItem = require('./delta-item');
 
 class Config
 {

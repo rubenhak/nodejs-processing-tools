@@ -5,7 +5,6 @@ const Promise = require('the-promise');
 
 const ConfigItem = require('./item');
 const ConfigRelation = require('./relation');
-const ConfigDeltaItem = require('./delta-item');
 
 class ConfigSection
 {

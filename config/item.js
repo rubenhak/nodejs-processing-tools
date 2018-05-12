@@ -4,6 +4,7 @@ const _ = require('the-lodash');
 const deepEqual = require('deep-equal');
 
 const ConfigRelation = require('./relation');
+const ConfigDeltaItem = require('./delta-item');
 const RelationConstructor = require('./relation-constructor');
 const RootMeta = require('./meta');
 

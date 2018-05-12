@@ -3,7 +3,6 @@ const _ = require('the-lodash');
 const uuid = require('uuid/v4');
 
 const DependencyProcessor = require('../dependency-processor');
-const ConfigDeltaItem = require('./delta-item');
 
 class DeltaProcessor
 {
