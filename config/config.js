@@ -154,7 +154,6 @@ class Config
                     if (sourceMetaName) {
                         if (relation.sourceMetaName == sourceMetaName) {
                             result.push(relation);
-
                         }
                     } else {
                         result.push(relation);

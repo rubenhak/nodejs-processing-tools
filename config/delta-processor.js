@@ -11,6 +11,7 @@ class DeltaProcessor
         this._currentConfig = currentConfig;
         this._desiredConfig = desiredConfig;
         this._logger = logger;
+        this._logger.level = 'verbose';
         this._deltaConfig = this._desiredConfig.produceDelta(this._currentConfig);
         this._outputDeltaConfig();
         this._id = uuid();
@@ -174,8 +175,19 @@ class DeltaProcessor
                                             }
                                         }
                                     } else {
-                                        this._logger.verbose('process: %s no change after AUTOCONFIG. Action: %s.', dn, itemId.action);
-                                        delete this._deltaConfig[dn];
+                                        this._logger.verbose('process: %s AUTOCONFIG returned none. Action: %s.', dn, itemId.action);
+                                        if (dn in this._deltaConfig)
+                                        {
+                                            if (this._deltaConfig[dn].status != 'recreate')
+                                            {
+                                                this._logger.verbose('process: %s no change after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                                delete this._deltaConfig[dn];
+                                            }
+                                            else
+                                            {
+                                                this._logger.verbose('process: %s no change after AUTOCONFIG. But keeping recreate. Action: %s.', dn, itemId.action);
+                                            }
+                                        }
                                     }
                                 } else {
                                     desiredItem.addToDeltaDict(this._deltaConfig, 'create');
