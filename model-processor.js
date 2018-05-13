@@ -369,13 +369,14 @@ class ModelProcessor
         this._logger.info('******************************');
         this._logger.info('******** ' + this._deltaStage + ' DELTA ********');
         this._logger.info('******************************');
-        for(var item of _.values(deltaConfig))
+        for(var item of deltaConfig)
         {
             this._logger.info('Item %s, status: %s', item.dn, item.status);
-            if (item.status == 'update' || item.status == 'recreate') {
-                this._logger.info('        delta:%s', item.delta);
-            } else if (item.status == 'create') {
-                this._logger.info('        config:%s', item.config);
+            if (item.delta) {
+                this._logger.info('        delta:', item.delta);
+            }
+            if (item.config) {
+                this._logger.info('        config:', item.config);
             }
         }
 
@@ -480,13 +481,15 @@ class ModelProcessor
         }
 
         var deltaConfig = this._desiredConfig.produceDelta(this._currentConfig);
-        // this._logger.info('******** COMPLETE DELTA ********');
-        // this._logger.info('%s', '', deltaConfig);
+        this._logger.info('******** COMPLETE DELTA ********');
+
         deltaConfig = _.values(deltaConfig).map(x => ({
             dn: x.dn,
             status: x.status,
-            delta: x.delta
+            delta: x.delta,
+            config: x.config
         }));
+        // this._logger.info('%s', '', deltaConfig);
         return deltaConfig;
     }
 

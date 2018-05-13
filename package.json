@@ -1,6 +1,6 @@
 {
   "name": "processing-tools",
-  "version": "1.0.35",
+  "version": "1.0.36",
   "description": "",
   "main": "dependency-processor.js",
   "scripts": {
