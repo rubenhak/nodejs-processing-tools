@@ -366,11 +366,20 @@ class ModelProcessor
         var deltaConfig = this._extractDelta();
         this.setSingleStageData(this._deltaStage + 'Delta', deltaConfig);
 
+        this._logger.info('******************************');
         this._logger.info('******** ' + this._deltaStage + ' DELTA ********');
-        for(var x of deltaConfig) {
-            this._logger.info(x);
+        this._logger.info('******************************');
+        for(var item of _.values(deltaConfig))
+        {
+            this._logger.info('Item %s, status: %s', item.dn, item.status);
+            if (item.status == 'update' || item.status == 'recreate') {
+                this._logger.info('        delta:%s', item.delta);
+            } else if (item.status == 'create') {
+                this._logger.info('        config:%s', item.config);
+            }
         }
-        this._debugOutputDeltaToFile(this._deltaStage, deltaConfig);
+
+        this._debugOutputDeltaToFile(deltaConfig, deltaConfig);
     }
 
     _processDelta()

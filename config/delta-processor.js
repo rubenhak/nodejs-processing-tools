@@ -13,7 +13,6 @@ class DeltaProcessor
         this._logger = logger;
         this._logger.level = 'verbose';
         this._deltaConfig = this._desiredConfig.produceDelta(this._currentConfig);
-        this._outputDeltaConfig();
         this._id = uuid();
         this._logger.info('Created delta %s', this._id);
     }
@@ -369,24 +368,6 @@ class DeltaProcessor
         }
 
         return true;
-    }
-
-    _outputDeltaConfig()
-    {
-        this._logger.info('******************************');
-        this._logger.info('******************************');
-        this._logger.info('******** DELTA CONFIG ********');
-        this._logger.info('******************************');
-        for(var item of _.values(this._deltaConfig))
-        {
-            this._logger.info('Item %s, status: %s', item.dn, item.status);
-            if (item.status == 'update') {
-                this._logger.info('        delta:%s', '', item.delta);
-            } else if (item.status == 'create') {
-                this._logger.info('        config:%s', '', item.config);
-                //this._logger.info('        naming:%s', '', item.item.naming);
-            }
-        }
     }
 
 }
