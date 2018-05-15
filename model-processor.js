@@ -380,7 +380,7 @@ class ModelProcessor
             }
         }
 
-        this._debugOutputDeltaToFile(deltaConfig, deltaConfig);
+        this._debugOutputDeltaToFile(this._deltaStage, deltaConfig);
     }
 
     _processDelta()
