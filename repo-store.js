@@ -6,9 +6,10 @@ const Promise = require('the-promise');
 
 class RepoStore
 {
-    constructor(logger)
+    constructor(logger, name)
     {
         this._logger = logger;
+        this._name = name;
 
         this._repositories = {};
         this._skipFileOutput = false;
@@ -174,9 +175,9 @@ class RepoStore
         var repoInfo = this._getRepositoryInfo(repoName);
 
         var entries = this._flattenKeys('dirtyRepos', [repoName], repoInfo.processorLevels);
-        this._logger.info('[_processDirtyRepo] entries: ', entries);
+        this._logger.info('[_processDirtyRepo] %s, entries: ', repoName, entries);
         entries = entries.filter(x => !this._shouldDelayDirtyProcessing(repoName, x));
-        this._logger.info('[_processDirtyRepo] filtered entries: ', entries);
+        this._logger.info('[_processDirtyRepo] %s, filtered entries: ', repoName, entries);
 
         return Promise.resolve()
             .then(() => this.delete('dirtyRepos', [repoName]))
@@ -188,6 +189,7 @@ class RepoStore
     {
         var repoInfo = this._getRepositoryInfo(name);
         var fullPath = _.concat(name, path);
+        this._logger.info('[unmarkDirtyRepo] %s: ', name, path);
         this.delete('dirtyRepos', fullPath, true);
     }
 
@@ -196,6 +198,7 @@ class RepoStore
         if (this._shouldDelayDirtyProcessing(name, path))
         {
             var fullPath = _.concat(name, path);
+            this._logger.info('[markDirtyRepo] %s: ', name, path);
             this.set('dirtyRepos', fullPath, true);
         }
         else
@@ -229,7 +232,7 @@ class RepoStore
 
     outputRepository(name)
     {
-        this._logger.silly('[outputRepository] %s...', name);
+        this._logger.silly('[outputRepository] %s::%s...', this._name, name);
 
         var info = this._getRepositoryInfo(name);
         this._logger.silly('%s: ', info.info, info.data);
@@ -243,7 +246,9 @@ class RepoStore
             return;
         }
 
-        var fileName = 'logs_berlioz/task-metadata-' + name + '.json';
+        this._logger.silly('[_outputRepositoryToFile] %s::%s...', this._name, name);
+
+        var fileName = 'logs_berlioz/' + this._name + '-' + name + '.json';
 
         var writer = fs.createWriteStream(fileName);
         var info = this._getRepositoryInfo(name);
@@ -286,8 +291,7 @@ class RepoStore
 
     loadFromFile(dirPath)
     {
-        return Promise.serial(_.keys(this._repositories), x => this._loadRepoFromFile(x, dirPath))
-            .then(() => this.outputRepositories());
+        return Promise.serial(_.keys(this._repositories), x => this._loadRepoFromFile(x, dirPath));
     }
 
     _loadRepoFromFile(name, dirPath)
