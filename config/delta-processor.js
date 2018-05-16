@@ -227,6 +227,7 @@ class DeltaProcessor
         if (deltaItem.status == 'create' || deltaItem.status == 'recreate') {
             this._logger.verbose('Process Delta Create %s', deltaItem.dn);
 
+            var newlyCreatedItem = null;
             return Promise.resolve()
                 .then(() => {
                     if (meta._onCreate) {
@@ -240,9 +241,17 @@ class DeltaProcessor
                             });
                     }
                 })
-                .then(() => {
+                .then(item => {
+                    newlyCreatedItem = item;
                     var relations = deltaItem.item.relations;
                     return Promise.serial(relations, relation => this._processDeltaRelationCreate(deltaItem, relation.targetDn));
+                })
+                .then(() => {
+                    if (meta._onPostCreate) {
+                        if (newlyCreatedItem) {
+                            return meta._onPostCreate(newlyCreatedItem);
+                        }
+                    }
                 })
                 then(() => true);
                 ;
