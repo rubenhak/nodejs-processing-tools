@@ -253,7 +253,7 @@ class DeltaProcessor
                         }
                     }
                 })
-                then(() => true);
+                .then(() => true);
                 ;
         }
         else if (deltaItem.status == 'update')
@@ -277,7 +277,7 @@ class DeltaProcessor
                     var relations = deltaItem.delta.relations.filter(x => (x.state == 'create' || x.state == 'update'));
                     return Promise.serial(relations, relation => this._processDeltaRelationCreate(deltaItem, relation.relation));
                 })
-                then(() => true);
+                .then(() => true);
                 ;
         }
 
