@@ -56,19 +56,9 @@ exports.mergeEnvironmentSets = function(baseEnvSet, activeEnvSet)
     return resolvedEnvSet;
 }
 
-exports.extractEnvironment = function(obj, setName, substitutions)
+exports.substituteEnvironment = function(envDict, substitutions)
 {
-    var result;
-    if (obj.environment[setName]) {
-        result = obj.environment[setName];
-    }
-    if (!result) {
-        result = obj.environment.global;
-    }
-    if (!result) {
-        result = {};
-    }
-    result = _.clone(result);
+    var result = _.clone(envDict);
     for(var key of _.keys(result))
     {
         var val = result[key];
@@ -79,5 +69,4 @@ exports.extractEnvironment = function(obj, setName, substitutions)
         result[key] = val;
     }
     return result;
-
 }
