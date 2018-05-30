@@ -387,76 +387,61 @@ class ConfigItem
 
     debugOutputToFile(writer)
     {
-        writer.write('    -) ' + this.dn + '\n');
-        writer.write('        Naming: ' + JSON.stringify(this.naming) + '\n');
+        writer.write('-) ' + this.dn);
+        writer.indent();
+        writer.write('Naming: ' + JSON.stringify(this.naming));
         if (this.id)
         {
-            writer.write('         Id: ' + JSON.stringify(this.id) + '\n');
+            writer.write('Id: ' + JSON.stringify(this.id));
         }
-        writer.write('        IsConfig: ' + this.isConfig + '\n');
+        writer.write('IsConfig: ' + this.isConfig);
         if (this.taskLabels) {
-            writer.write('        taskLabels: ' + JSON.stringify(this.taskLabels) + '\n');
+            writer.write('taskLabels: ' + JSON.stringify(this.taskLabels));
         }
         if (this.nonConcurrentLabels) {
-            writer.write('        nonConcurrentLabels: ' + JSON.stringify(this.nonConcurrentLabels) + '\n');
+            writer.write('nonConcurrentLabels: ' + JSON.stringify(this.nonConcurrentLabels));
         }
         if (_.keys(this._autoCreatedOwners).length > 0) {
-            writer.write('        Auto Created Owners:\n');
-            for (var x of _.keys(this._autoCreatedOwners)) {
-                writer.write('            ' + x + '\n');
-            }
+            writer.write('Auto Created Owners:');
+            writer.write(_.keys(this._autoCreatedOwners));
         }
 
         if (_.keys(this.config).length > 0)
         {
-            writer.write('        Config:\n');
-            for (var x of JSON.stringify(this.config, null, 2).split('\n')) {
-                writer.write('            ' + x + '\n');
-            }
+            writer.write('Config:');
+            writer.write(this.config);
         }
         if (_.keys(this.runtime).length > 0)
         {
-            writer.write('        Runtime:\n');
-            for (var x of JSON.stringify(this.runtime, null, 2).split('\n')) {
-                writer.write('            ' + x + '\n');
-            }
+            writer.write('Runtime:');
+            writer.write(this.runtime);
         }
         if (this.obj)
         {
-            writer.write('        Obj: \n');
-            for (var x of JSON.stringify(this.obj, null, 2).split('\n')) {
-                writer.write('           ' + x + '\n');
-            }
+            writer.write('Obj:');
+            writer.write(this.obj);
         }
         for (var relation of _.sortBy(this.relations, x => x.targetDn)) {
-            var relationInfo = '        => ' + relation.targetDn + ', Target: ' + JSON.stringify(relation.targetId) + ', Resolved: ' + JSON.stringify(relation.resolvedTargetId);
+            var relationInfo = '=> ' + relation.targetDn + ', Target: ' + JSON.stringify(relation.targetId) + ', Resolved: ' + JSON.stringify(relation.resolvedTargetId);
             if (relation.shouldIgnoreDelta) {
                 relationInfo = relationInfo + ' (Ignored by delta)';
             }
             if (relation.shouldIgnoreDependency) {
                 relationInfo = relationInfo + ' (Dependency ignored by processor)';
             }
-            writer.write(relationInfo + '\n');
+            writer.write(relationInfo);
             if (relation.sourceLeg.autoCreate)
             {
-                writer.write('           Source Autocreate. Runtime:\n');
-                if (relation.sourceLeg.autoCreateRuntime) {
-                    for (var x of JSON.stringify(relation.sourceLeg.autoCreateRuntime, null, 2).split('\n')) {
-                        writer.write('           ' + x + '\n');
-                    }
-                }
+                writer.write('Source Autocreate. Runtime:');
+                writer.write(relation.sourceLeg.autoCreateRuntime);
             }
             if (relation.targetLeg.autoCreate)
             {
-                writer.write('           Target Autocreate. Runtime:\n');
-                if (relation.targetLeg.autoCreateRuntime) {
-                    for (var x of JSON.stringify(relation.targetLeg.autoCreateRuntime, null, 2).split('\n')) {
-                        writer.write('           ' + x + '\n');
-                    }
-                }
+                writer.write('Target Autocreate. Runtime:');
+                writer.write(relation.targetLeg.autoCreateRuntime);
             }
         }
-
+        writer.unindent();
     }
 
     acceptObj(obj)

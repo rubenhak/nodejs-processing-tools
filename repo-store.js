@@ -12,7 +12,6 @@ class RepoStore
         this._name = name;
 
         this._repositories = {};
-        this._skipFileOutput = false;
 
         this.setupRepository('dirtyRepos', 'DIRTY REPOSITORIES').markDoNotPersist();
         this.setupRepository('suppressed', 'SUPPRESSED DIRTY RESOURCES').markDoNotPersist();
@@ -20,10 +19,6 @@ class RepoStore
 
     get repos() {
         return _.keys(this._repositories);
-    }
-
-    setSkipFileOutput(value) {
-        this._skipFileOutput = value;
     }
 
     getRepository(name)
@@ -237,30 +232,19 @@ class RepoStore
         var info = this._getRepositoryInfo(name);
         this._logger.silly('%s: ', info.info, info.data);
 
-        this._outputRepositoryToFile(name);
+        return this._outputRepositoryToFile(name);
     }
 
     _outputRepositoryToFile(name)
     {
-        if (this._skipFileOutput) {
-            return;
-        }
-
-        this._logger.silly('[_outputRepositoryToFile] %s::%s...', this._name, name);
-
-        var fileName = 'logs_berlioz/' + this._name + '-' + name + '.json';
-
-        var writer = fs.createWriteStream(fileName);
+        var fileName = this._name + '-' + name + '.json';
         var info = this._getRepositoryInfo(name);
-        writer.write(JSON.stringify(info.data, null, 4));
+        return this._logger.outputFile(fileName, info.data);
     }
 
     outputRepositories()
     {
-        for(var name of this.repos)
-        {
-            this.outputRepository(name);
-        }
+        return Promise.serial(this.repos, x => this.outputRepository(x));
     }
 
     saveToFile(dirPath)

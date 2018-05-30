@@ -14,7 +14,6 @@ class ModelProcessor
     constructor(logger)
     {
         this._logger = logger;
-        this._skipFileOutput = false;
         this._singleStageData = {};
         this._singleStageResult = null;
         this._stages = {};
@@ -116,10 +115,6 @@ class ModelProcessor
         }
         this._singleStageData[name] = value;
         this._logger.info('[setSingleStageData] %s', name);
-    }
-
-    setSkipFileOutput(value) {
-        this._skipFileOutput = value;
     }
 
     setLastDeltaConfig(value) {
@@ -256,13 +251,7 @@ class ModelProcessor
 
         this.setSingleStageData(this._currentConfigStage + 'CurrentConfig', this._currentConfig.exportToData());
 
-        if (this._skipFileOutput) {
-            return;
-        }
-
-        // this._logger.info('******** CURRENT CONFIG ********');
-        //this._currentConfig.output();
-        return this._currentConfig.debugOutputToFile('logs_berlioz/' + this._iterationNumber + '_' + this._currentConfigStage + '_current' + '.txt');
+        return this._currentConfig.debugOutputToFile(this._iterationNumber + '_' + this._currentConfigStage + '_current' + '.txt');
     }
 
     _setDesiredConfigStage(name)
@@ -279,13 +268,7 @@ class ModelProcessor
 
         this.setSingleStageData(this._desiredConfigStage + 'DesiredConfig', this._desiredConfig.exportToData());
 
-        if (this._skipFileOutput) {
-            return;
-        }
-
-        //this._logger.info('******** DESIRED CONFIG ********');
-        //this._desiredConfig.output();
-        return this._desiredConfig.debugOutputToFile('logs_berlioz/' + this._iterationNumber + '_' + this._desiredConfigStage + '_desired' + '.txt');
+        return this._desiredConfig.debugOutputToFile(this._iterationNumber + '_' + this._desiredConfigStage + '_desired' + '.txt');
     }
 
     _processIteration()
@@ -379,7 +362,7 @@ class ModelProcessor
             }
         }
 
-        this._debugOutputDeltaToFile(this._deltaStage, deltaConfig);
+        return this._debugOutputDeltaToFile(this._deltaStage, deltaConfig);
     }
 
     _processDelta()
@@ -494,15 +477,15 @@ class ModelProcessor
 
     _debugOutputDeltaToFile(name, deltaConfig)
     {
-        if (this._skipFileOutput) {
+        var writer = this._logger.outputStream(this._iterationNumber + '_' + name + '_delta.txt');
+        if (!writer) {
             return;
         }
-        var writer = fs.createWriteStream('logs_berlioz/' + this._iterationNumber + '_' + name + '_delta.txt');
         for(var x of deltaConfig)
         {
-            writer.write(x.dn + ' :: ' + x.status + '\n');
+            writer.write(x.dn + ' :: ' + x.status);
         }
-        writer.end();
+        return writer.close();
     }
 }
 

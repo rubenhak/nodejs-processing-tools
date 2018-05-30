@@ -404,49 +404,40 @@ class Config
 
     debugOutputToFile(fileName)
     {
-        var writer = fs.createWriteStream(fileName);
+        var writer = this._logger.outputStream(fileName);
+        if (!writer) {
+            return Promise.resolve();
+        }
+
         for(var sectionName of this._meta.sections.map(x => x.name).sort())
         {
-            writer.write('**** ' + sectionName + '\n');
+            writer.writeHeader(sectionName);
             this._sections[sectionName].debugOutputToFile(writer);
-            writer.write('\n');
         }
-        writer.write('\n');
-        writer.write('\n');
+        writer.write();
+        writer.write();
         for(var relationList of _.orderBy(_.values(this._relations), ['sourceDn', 'targetDn'])) {
             for (var relation of relationList) {
-                writer.write('     ' + relation.sourceDn + ' => ' + relation.targetDn + ', Target: ' + JSON.stringify(relation.targetId) + ', Resolved: ' + JSON.stringify(relation.resolvedTargetId) + '\n');
+                writer.indent();
+                writer.write(relation.sourceDn + ' => ' + relation.targetDn + ', Target: ' + JSON.stringify(relation.targetId) + ', Resolved: ' + JSON.stringify(relation.resolvedTargetId));
                 if (relation.sourceLeg.autoCreate)
                 {
-                    writer.write('           Source Autocreate. Runtime:\n');
-                    if (relation.sourceLeg.autoCreateRuntime) {
-                        for (var x of JSON.stringify(relation.sourceLeg.autoCreateRuntime, null, 2).split('\n')) {
-                            writer.write('           ' + x + '\n');
-                        }
-                    }
+                    writer.indent();
+                    writer.write('Source Autocreate. Runtime:');
+                    writer.write(relation.sourceLeg.autoCreateRuntime);
+                    writer.unindent();
                 }
                 if (relation.targetLeg.autoCreate)
                 {
-                    writer.write('           Target Autocreate. Runtime:\n');
-                    if (relation.targetLeg.autoCreateRuntime) {
-                        for (var x of JSON.stringify(relation.targetLeg.autoCreateRuntime, null, 2).split('\n')) {
-                            writer.write('           ' + x + '\n');
-                        }
-                    }
+                    writer.indent();
+                    writer.write('Target Autocreate. Runtime:');
+                    writer.write(relation.targetLeg.autoCreateRuntime);
+                    writer.unindent();
                 }
+                writer.unindent();
             }
         }
-        return new Promise((resolve, reject) => {
-
-            writer.on('error', function(err) {
-                reject(err);
-            });
-
-            writer.end(null, null, () => {
-                resolve();
-            });
-
-        });
+        return writer.close();
     }
 
     output()

@@ -1,4 +1,3 @@
-const fs = require('fs');
 const _ = require('the-lodash');
 const deepEqual = require('deep-equal')
 const Promise = require('the-promise');
@@ -235,7 +234,7 @@ class ConfigSection
         for(var item of _.sortBy(this.items, x => x.dn))
         {
             item.debugOutputToFile(writer);
-            writer.write('\n');
+            writer.write();
         }
     }
 
