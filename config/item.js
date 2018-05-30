@@ -423,6 +423,7 @@ class ConfigItem
         }
         for (var relation of _.sortBy(this.relations, x => x.targetDn)) {
             var relationInfo = '=> ' + relation.targetDn + ', Target: ' + JSON.stringify(relation.targetId) + ', Resolved: ' + JSON.stringify(relation.resolvedTargetId);
+            writer.indent();
             if (relation.shouldIgnoreDelta) {
                 relationInfo = relationInfo + ' (Ignored by delta)';
             }
@@ -440,8 +441,10 @@ class ConfigItem
                 writer.write('Target Autocreate. Runtime:');
                 writer.write(relation.targetLeg.autoCreateRuntime);
             }
+            writer.unindent();
         }
         writer.unindent();
+        writer.write();
     }
 
     acceptObj(obj)
