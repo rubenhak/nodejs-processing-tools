@@ -135,7 +135,6 @@ class ModelProcessor
     {
         var normalizedPath = Path.join(this._modelsDirLocation, "models");
         const modelLogger = this._logger.sublogger('Models');
-        // modelLogger.level = 'info';
         this._configMeta = ConfigMeta.load(normalizedPath, modelLogger, this._metaContext);
     }
 

@@ -11,7 +11,6 @@ class DeltaProcessor
         this._currentConfig = currentConfig;
         this._desiredConfig = desiredConfig;
         this._logger = logger;
-        this._logger.level = 'verbose';
         this._deltaConfig = this._desiredConfig.produceDelta(this._currentConfig);
         this._id = uuid();
         this._logger.info('Created delta %s', this._id);
@@ -144,65 +143,10 @@ class DeltaProcessor
         var meta = dnInfo.meta;
 
         return Promise.resolve()
-            .then(() => {
-                if (meta._autoConfig) {
-
-                    var currentItem = this._currentConfig.findDn(dn);
-                    var desiredItem = this._desiredConfig.findDn(dn);
-                    if (desiredItem) {
-                        this._logger.verbose('process: %s BEGIN AUTOCONFIG. Action: %s', dn, itemId.action);
-
-                        return Promise.resolve(desiredItem.performAutoConfig(itemId.action))
-                            .then(canContinue => {
-                                if (!canContinue) {
-                                    this._logger.verbose('process: %s END AUTOCONFIG :: CANNOT CONTINUE. Action: %s.', dn, itemId.action);
-                                    return false;
-                                }
-
-                                if (currentItem) {
-                                    var itemDelta = desiredItem.produceDelta(currentItem);
-                                    if (itemDelta) {
-                                        desiredItem.addToDeltaDict(this._deltaConfig, 'update', itemDelta);
-                                        this._logger.verbose('process: %s to be updated after AUTOCONFIG. Action: %s.', dn, itemId.action);
-                                        this._deltaConfig[dn].output();
-                                        if (desiredItem.meta._onUpdateRecreateCb)
-                                        {
-                                            if (desiredItem.meta._onUpdateRecreateCb(this._deltaConfig[dn]))
-                                            {
-                                                this._logger.verbose('process: %s Marking Recreatable During AUTOCONFIG. Action: %s.', dn, itemId.action);
-                                                this._desiredConfig.markItemRecreateInDelta(this._deltaConfig, desiredItem);
-                                            }
-                                        }
-                                    } else {
-                                        this._logger.verbose('process: %s AUTOCONFIG returned none. Action: %s.', dn, itemId.action);
-                                        if (dn in this._deltaConfig)
-                                        {
-                                            if (this._deltaConfig[dn].status != 'recreate')
-                                            {
-                                                this._logger.verbose('process: %s no change after AUTOCONFIG. Action: %s.', dn, itemId.action);
-                                                delete this._deltaConfig[dn];
-                                            }
-                                            else
-                                            {
-                                                this._logger.verbose('process: %s no change after AUTOCONFIG. But keeping recreate. Action: %s.', dn, itemId.action);
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    desiredItem.addToDeltaDict(this._deltaConfig, 'create');
-                                    this._logger.verbose('process: %s to be created after AUTOCONFIG. Action: %s.', dn, itemId.action);
-                                    this._deltaConfig[dn].output();
-                                }
-
-                                this._logger.verbose('process: %s END AUTOCONFIG. Action: %s.', dn, itemId.action);
-                                return canContinue;
-                            });
-                    }
-                }
-
-                return true;
-            })
+            .then(() => this._processAutoConfig(itemId, dn, meta))
             .then(canContinue => {
+                this._logger.verbose('[_processDeltaItem]: %s. action=%s. canContinue=%s', dn, itemId.action, canContinue);
+
                 if (!canContinue) {
                     return false;
                 }
@@ -220,6 +164,68 @@ class DeltaProcessor
                 this._logger.verbose('process: ' + dn + ' :: end');
                 return canContinue;
             });
+    }
+
+    _processAutoConfig(itemId, dn, meta)
+    {
+        this._logger.verbose('[_processAutoConfig]: %s', dn, itemId.action);
+
+        if (meta._autoConfig && itemId.action == "create")
+        {
+            var currentItem = this._currentConfig.findDn(dn);
+            var desiredItem = this._desiredConfig.findDn(dn);
+            if (desiredItem) {
+                this._logger.verbose('process: %s BEGIN AUTOCONFIG. Action: %s', dn, itemId.action);
+
+                return Promise.resolve(desiredItem.performAutoConfig(itemId.action))
+                    .then(canContinue => {
+                        if (!canContinue) {
+                            this._logger.verbose('process: %s END AUTOCONFIG :: CANNOT CONTINUE. Action: %s.', dn, itemId.action);
+                            return false;
+                        }
+
+                        if (currentItem) {
+                            var itemDelta = desiredItem.produceDelta(currentItem);
+                            if (itemDelta) {
+                                desiredItem.addToDeltaDict(this._deltaConfig, 'update', itemDelta);
+                                this._logger.verbose('process: %s to be updated after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                this._deltaConfig[dn].output();
+                                if (desiredItem.meta._onUpdateRecreateCb)
+                                {
+                                    if (desiredItem.meta._onUpdateRecreateCb(this._deltaConfig[dn]))
+                                    {
+                                        this._logger.verbose('process: %s Marking Recreatable During AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                        this._desiredConfig.markItemRecreateInDelta(this._deltaConfig, desiredItem);
+                                    }
+                                }
+                            } else {
+                                this._logger.verbose('process: %s AUTOCONFIG returned none. Action: %s.', dn, itemId.action);
+                                if (dn in this._deltaConfig)
+                                {
+                                    if (this._deltaConfig[dn].status != 'recreate')
+                                    {
+                                        this._logger.verbose('process: %s no change after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                                        delete this._deltaConfig[dn];
+                                    }
+                                    else
+                                    {
+                                        this._logger.verbose('process: %s no change after AUTOCONFIG. But keeping recreate. Action: %s.', dn, itemId.action);
+                                    }
+                                }
+                            }
+                        } else {
+                            desiredItem.addToDeltaDict(this._deltaConfig, 'create');
+                            this._logger.verbose('process: %s to be created after AUTOCONFIG. Action: %s.', dn, itemId.action);
+                            this._deltaConfig[dn].output();
+                        }
+
+                        this._logger.verbose('process: %s END AUTOCONFIG. Action: %s.', dn, itemId.action);
+                        return canContinue;
+                    });
+            }
+        }
+
+        return true;
     }
 
     _processDeltaCreate(deltaItem, meta)
