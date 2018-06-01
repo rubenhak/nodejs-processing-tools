@@ -1,5 +1,6 @@
 # NodeJs
 node_modules/
+package-lock.json
 
 # Mac File System File...utterly useless to anyone but me.
 .DS_Store
