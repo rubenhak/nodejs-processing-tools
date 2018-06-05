@@ -36,6 +36,7 @@ class ModelProcessor
             createDesired: 'create-desired',
             constructDesired: null,
             finalizeDesired: null,
+            preProcessDelta: null,
             processDelta: 'process-delta',
             decideNextSteps: 'decide-next-steps',
             postProcessDelta: null
@@ -305,6 +306,8 @@ class ModelProcessor
             .then(() => this._setDesiredConfigStage('complete'))
 
             .then(() => this._setDeltaStage('initial'))
+
+            .then(() => this._runProcessorStage(this._iterationStages.preProcessDelta))
 
             .then(() => this._runProcessorStage(this._iterationStages.processDelta))
             .then(() => this._setCurrentConfigStage('final'))

@@ -387,6 +387,7 @@ class ConfigItem
 
     debugOutputToFile(writer)
     {
+        writer.write();
         writer.write('-) ' + this.dn);
         writer.indent();
         writer.write('Naming: ' + JSON.stringify(this.naming));
