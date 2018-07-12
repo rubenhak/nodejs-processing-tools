@@ -310,13 +310,14 @@ class ModelProcessor
             .then(() => this._runProcessorStage(this._iterationStages.preProcessDelta))
 
             .then(() => this._runProcessorStage(this._iterationStages.processDelta))
+
+            .then(() => this._runProcessorStage(this._iterationStages.postProcessDelta))
+
             .then(() => this._setCurrentConfigStage('final'))
             .then(() => this._setDesiredConfigStage('final'))
             .then(() => this._setDeltaStage('final'))
 
             .then(() => this._runProcessorStage(this._iterationStages.decideNextSteps))
-
-            .then(() => this._runProcessorStage(this._iterationStages.postProcessDelta))
 
             .then(() => {
                 this._logger.info('singleStageResult: ', this.singleStageResult);
