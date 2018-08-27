@@ -45,7 +45,7 @@ class Config
         if (relation.sourceDn in this._relations) {
             var existings = this._relations[relation.sourceDn].filter(x => x.targetDn == relation.targetDn);
             if (existings.length > 0) {
-                return existings[0];
+                return Promise.resolve(existings[0]);
             }
         }
 
