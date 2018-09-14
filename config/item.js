@@ -54,7 +54,7 @@ class ConfigItem
 
     loadFromData(data)
     {
-        this._config = data.config;
+        this._setConfig(data.config);
         this._obj = data.obj;
         this._runtime = data.runtime;
         this._id = data.id;
@@ -121,6 +121,14 @@ class ConfigItem
         return this.root.getTargetRelations(this.dn);
     }
 
+    _setConfig(newConfig) {
+        if (!newConfig) {
+            this._config = {};
+        } else {
+            this._config = newConfig;
+        }
+    }
+
     addOwner(relationOwnerDn)
     {
         this._autoCreatedOwners[relationOwnerDn] = true;
@@ -141,7 +149,7 @@ class ConfigItem
 
     cloneFrom(otherItem)
     {
-        this._config = _.cloneDeep(otherItem._config);
+        this._setConfig(_.cloneDeep(otherItem._config))
         this._runtime = _.cloneDeep(otherItem._runtime);
         this._obj = otherItem._obj;
         this._id = otherItem._id;
@@ -458,7 +466,7 @@ class ConfigItem
                 return Promise.resolve(this.meta.extractConfig(obj))
             })
             .then(result => {
-                this._config = result;
+                this._setConfig(result);
             })
             .then(() => {
                 this._runtime = this.meta.extractRuntime(obj);
