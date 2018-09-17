@@ -56,8 +56,8 @@ class ModelProcessor
         this.setupStage('output-current-config', () => {
             return this._outputCurrentConfig();
         });
-        this.setupStage('output-desired-config', () => {
-            return this._outputDesiredConfig();
+        this.setupStage('output-desired-config', (desiredConfigStage) => {
+            return this._outputDesiredConfig(desiredConfigStage);
         });
         this.setupStage('output-delta', () => {
             return this._outputDelta();
@@ -259,21 +259,20 @@ class ModelProcessor
         return this._currentConfig.debugOutputToFile(this._iterationNumber + '_' + this._currentConfigStage + '_current' + '.txt');
     }
 
-    _setDesiredConfigStage(name)
+    _outputDesiredConfigStage(name)
     {
-        this._desiredConfigStage = name;
-        return this.runStage('output-desired-config');
+        return this.runStage('output-desired-config', [name]);
     }
 
-    _outputDesiredConfig()
+    _outputDesiredConfig(desiredConfigStage)
     {
         if (!this._desiredConfig) {
             return;
         }
 
-        this.setSingleStageData(this._desiredConfigStage + 'DesiredConfig', this._desiredConfig.exportToData());
+        this.setSingleStageData(desiredConfigStage + 'DesiredConfig', this._desiredConfig.exportToData());
 
-        return this._desiredConfig.debugOutputToFile(this._iterationNumber + '_' + this._desiredConfigStage + '_desired' + '.txt');
+        return this._desiredConfig.debugOutputToFile(this._iterationNumber + '_' + desiredConfigStage + '_desired' + '.txt');
     }
 
     _processIteration()
@@ -303,22 +302,23 @@ class ModelProcessor
             .then(() => this._runProcessorStage(this._iterationStages.createDesired))
             .then(() => this._runProcessorStage(this._iterationStages.constructDesired))
             .then(() => this._runProcessorStage('autoconfig-desired'))
-            .then(() => this._setDesiredConfigStage('initial'))
+            .then(() => this._outputDesiredConfigStage('initial'))
 
             .then(() => this._runProcessorStage(this._iterationStages.finalizeDesired))
             .then(() => this._runProcessorStage('autoconfig-desired'))
-            .then(() => this._setDesiredConfigStage('complete'))
 
             .then(() => this._setDeltaStage('initial'))
 
             .then(() => this._runProcessorStage('internal-preprocess-delta'))
+
+            .then(() => this._outputDesiredConfigStage('complete'))
 
             .then(() => this._runProcessorStage(this._iterationStages.processDelta))
 
             .then(() => this._runProcessorStage(this._iterationStages.postProcessDelta))
 
             .then(() => this._setCurrentConfigStage('final'))
-            .then(() => this._setDesiredConfigStage('final'))
+            .then(() => this._outputDesiredConfigStage('final'))
             .then(() => this._setDeltaStage('final'))
 
             .then(() => this._runProcessorStage(this._iterationStages.decideNextSteps))
