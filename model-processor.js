@@ -43,6 +43,7 @@ class ModelProcessor
         };
 
         this.setupStage('process-iteration', this._processIteration.bind(this));
+        this.setupStage('internal-preprocess-delta', this._internalPreProcessDelta.bind(this));
 
         this.setupStage('extract-current', this._extractCurrent.bind(this));
         this.setupStage('create-desired', this._createDesired.bind(this));
@@ -134,8 +135,11 @@ class ModelProcessor
         this._configMeta = ConfigMeta.load(normalizedPath, modelLogger, this._metaContext);
     }
 
-    runStage(name)
+    runStage(name, args)
     {
+        if (!args) {
+            args = []
+        }
         var stage = this._stages[name];
         if (!stage) {
             this._logger.info('Available stages: ', _.keys(this._stages));
@@ -143,7 +147,7 @@ class ModelProcessor
         }
         this._logger.info('Running stage: %s...', name);
         this._stageTimers[name] = new Date();
-        return Promise.resolve(stage())
+        return Promise.resolve(stage.apply(null, args))
             .then(result => {
                 var timeDiff = new Date() - this._stageTimers[name];
                 delete this._stageTimers[name];
@@ -307,7 +311,7 @@ class ModelProcessor
 
             .then(() => this._setDeltaStage('initial'))
 
-            .then(() => this._runProcessorStage(this._iterationStages.preProcessDelta))
+            .then(() => this._runProcessorStage('internal-preprocess-delta'))
 
             .then(() => this._runProcessorStage(this._iterationStages.processDelta))
 
@@ -325,20 +329,33 @@ class ModelProcessor
             .then(() => this.singleStageResult);
     }
 
-    _runProcessorStage(stage)
+    _runProcessorStage(stage, args)
     {
         if (!stage) {
             return;
         }
         if (_.isArray(stage)) {
-            return Promise.serial(stage, x => this._runProcessorStage(x));
+            return Promise.serial(stage, x => this._runProcessorStage(x, args));
         }
 
         if (this.singleStageResult.skipFurtherStages) {
             this._logger.info('Skipping stage %s...', stage);
             return;
         }
-        return this.runStage(stage);
+        return this.runStage(stage, args);
+    }
+
+    _internalPreProcessDelta()
+    {
+        if (!this._iterationStages.preProcessDelta) {
+            return;
+        }
+        return Promise.serial(this._iterationStages.preProcessDelta, stage => {
+            var deltaConfig = this._extractDelta();
+            return Promise.resolve(this._runProcessorStage(stage, [deltaConfig]))
+                .then(() => this._runProcessorStage('autoconfig-desired'))
+        })
+        .then(() => this._setDeltaStage("complete"));
     }
 
     _setDeltaStage(name)
