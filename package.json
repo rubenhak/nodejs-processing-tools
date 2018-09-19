@@ -4,7 +4,7 @@
   "description": "",
   "main": "dependency-processor.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -26,5 +26,8 @@
     "the-promise": "^1.0.31",
     "toposort": "1.0.7",
     "uuid": "3.2.1"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
   }
 }
