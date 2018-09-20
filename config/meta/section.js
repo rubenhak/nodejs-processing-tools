@@ -14,6 +14,7 @@ class ConfigSectionMeta
         this._onPostRelationCreate = {};
         this._actions = {};
         this._ignoreDelta = false;
+        this._useDefaultsForDelta = false;
         this._onCheckIgnoreDelta = null;
     }
 
@@ -31,6 +32,10 @@ class ConfigSectionMeta
 
     get name() {
         return this._name;
+    }
+
+    get useDefaultsForDelta() {
+        return _useDefaultsForDelta;
     }
 
     markIgnoreDelta()
@@ -341,6 +346,11 @@ class ConfigSectionMeta
         {
             return this._onQuery(id, runtime);
         }
+    }
+
+    markUseDefaultsForDelta()
+    {
+        this._useDefaultsForDelta = true;
     }
 }
 

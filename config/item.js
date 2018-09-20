@@ -34,32 +34,6 @@ class ConfigItem
         return this._logger;
     }
 
-    exportToData()
-    {
-        // if (_.keys(this._autoCreatedOwners).length > 0) {
-        //     return null;
-        // }
-
-        var data = {
-            naming: this._naming,
-            config: this._config,
-            runtime: this._runtime,
-            obj: this._obj,
-            id: this._id,
-            autoCreatedOwners: this._autoCreatedOwners
-        };
-        return data;
-    }
-
-    loadFromData(data)
-    {
-        this._setConfig(data.config);
-        this._obj = data.obj;
-        this._runtime = data.runtime;
-        this._id = data.id;
-        this._autoCreatedOwners = data.autoCreatedOwners;
-    }
-
     get root() {
         return this._root;
     }
@@ -118,6 +92,28 @@ class ConfigItem
 
     get relations() {
         return this.root.getTargetRelations(this.dn);
+    }
+    
+    exportToData()
+    {
+        var data = {
+            naming: this._naming,
+            config: this._config,
+            runtime: this._runtime,
+            obj: this._obj,
+            id: this._id,
+            autoCreatedOwners: this._autoCreatedOwners
+        };
+        return data;
+    }
+
+    loadFromData(data)
+    {
+        this._setConfig(data.config);
+        this._obj = data.obj;
+        this._runtime = data.runtime;
+        this._id = data.id;
+        this._autoCreatedOwners = data.autoCreatedOwners;
     }
 
     _setConfig(newConfig) {
@@ -265,7 +261,13 @@ class ConfigItem
             var myConfig = this._config[key];
             if (key in baseConfigs) {
                 var baseConfig = baseConfigs[key];
-                if (!_.fastDeepEqual(myConfig, baseConfig)) {
+                var isdifferent = false; 
+                if (item.meta.useDefaultsForDelta) {
+                    isdifferent = _.fastDeepEqual(baseConfig, myConfig);
+                } else {
+                    isdifferent = _.isDefaultedEqual(baseConfig, myConfig);
+                }
+                if (isdifferent) {
                     deltaConfigs[key] = {
                         oldValue: baseConfig,
                         value: myConfig,
