@@ -1,5 +1,4 @@
 const fs = require('fs');
-const deepEqual = require('deep-equal');
 const Promise = require('the-promise');
 const _ = require('the-lodash');
 
@@ -104,7 +103,7 @@ class Config
             if (relationLeg.autoCreate) {
                 if (item) {
                     if (relationLeg.autoCreateRuntime) {
-                        if ( deepEqual(item.runtime, relationLeg.autoCreateRuntime)) {
+                        if (_.fastDeepEqual(item.runtime, relationLeg.autoCreateRuntime)) {
                             return item;
                         } else {
                             this._logger.verbose('Runtimes are different for %s. ItemRuntime: %s, RelationRuntime: %s...', relationLeg.dn, JSON.stringify(item.runtime), JSON.stringify(relationLeg.autoCreateRuntime));

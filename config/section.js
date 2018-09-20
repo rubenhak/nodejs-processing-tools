@@ -1,5 +1,4 @@
 const _ = require('the-lodash');
-const deepEqual = require('deep-equal')
 const Promise = require('the-promise');
 
 const ConfigItem = require('./item');

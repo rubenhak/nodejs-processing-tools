@@ -1,5 +1,4 @@
 const fs = require('fs');
-const deepEqual = require('deep-equal')
 const _ = require('the-lodash');
 const Promise = require('the-promise');
 

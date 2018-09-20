@@ -1,7 +1,6 @@
 const fs = require('fs');
 const Promise = require('the-promise');
 const _ = require('the-lodash');
-const deepEqual = require('deep-equal');
 
 const ConfigRelation = require('./relation');
 const ConfigDeltaItem = require('./delta-item');
@@ -247,13 +246,26 @@ class ConfigItem
 
     produceDelta(baseItem)
     {
+        var deltaConfigs = this._produceDeltaConfigs(baseItem);
+        var deltaRelations = this._produceDeltaRelations(baseItem);
+        if (_.keys(deltaConfigs).length + deltaRelations.length > 0) {
+            return {
+                configs: deltaConfigs,
+                relations: deltaRelations
+            }
+        }
+        return null;
+    }
+
+    _produceDeltaConfigs(baseItem)
+    {
         var deltaConfigs = {};
         var baseConfigs = _.clone(baseItem._config);
         for(var key of _.keys(this._config)) {
             var myConfig = this._config[key];
             if (key in baseConfigs) {
                 var baseConfig = baseConfigs[key];
-                if (!deepEqual(myConfig, baseConfig)) {
+                if (!_.fastDeepEqual(myConfig, baseConfig)) {
                     deltaConfigs[key] = {
                         oldValue: baseConfig,
                         value: myConfig,
@@ -275,7 +287,11 @@ class ConfigItem
                 state: 'delete'
             };
         }
+        return deltaConfigs;
+    }
 
+    _produceDeltaRelations(baseItem)
+    {
         var deltaRelations = [];
         var baseRelations = _.clone(baseItem.relations);
         var targetRelations = this.relations.filter(x => !x.shouldIgnoreDelta);
@@ -283,7 +299,7 @@ class ConfigItem
             var baseRelation = _.find(baseRelations, x => x.targetDn == relation.targetDn);
             if (baseRelation) {
                 if (baseRelation.targetId && relation.resolvedTargetId) {
-                    if (!deepEqual(baseRelation.targetId, relation.resolvedTargetId))
+                    if (!_.fastDeepEqual(baseRelation.targetId, relation.resolvedTargetId))
                     {
                         deltaRelations.push({
                             targetMeta: relation.targetMeta.name,
@@ -311,14 +327,7 @@ class ConfigItem
                 state: 'delete'
             });
         }
-
-        if (_.keys(deltaConfigs).length + deltaRelations.length > 0) {
-            return {
-                configs: deltaConfigs,
-                relations: deltaRelations
-            }
-        }
-        return null;
+        return deltaRelations;
     }
 
     addToDeltaDict(deltaDict, state, itemDelta)
