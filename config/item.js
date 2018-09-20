@@ -261,13 +261,13 @@ class ConfigItem
             var myConfig = this._config[key];
             if (key in baseConfigs) {
                 var baseConfig = baseConfigs[key];
-                var isdifferent = false; 
-                if (item.meta.useDefaultsForDelta) {
-                    isdifferent = _.fastDeepEqual(baseConfig, myConfig);
+                var isEqual = false; 
+                if (this.meta.useDefaultsForDelta) {
+                    isEqual = _.isDefaultedEqual(baseConfig, myConfig);
                 } else {
-                    isdifferent = _.isDefaultedEqual(baseConfig, myConfig);
+                    isEqual = _.fastDeepEqual(baseConfig, myConfig);
                 }
-                if (isdifferent) {
+                if (!isEqual) {
                     deltaConfigs[key] = {
                         oldValue: baseConfig,
                         value: myConfig,

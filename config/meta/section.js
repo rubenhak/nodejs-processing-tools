@@ -35,7 +35,7 @@ class ConfigSectionMeta
     }
 
     get useDefaultsForDelta() {
-        return _useDefaultsForDelta;
+        return this._useDefaultsForDelta;
     }
 
     markIgnoreDelta()
