@@ -41,6 +41,7 @@ class ConfigSectionMeta
     markIgnoreDelta()
     {
         this._ignoreDelta = true;
+        return this;
     }
 
     onExtractIdFromNaming(callback)
@@ -351,6 +352,7 @@ class ConfigSectionMeta
     markUseDefaultsForDelta()
     {
         this._useDefaultsForDelta = true;
+        return this;
     }
 }
 
