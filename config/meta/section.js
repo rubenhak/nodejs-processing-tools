@@ -16,6 +16,7 @@ class ConfigSectionMeta
         this._ignoreDelta = false;
         this._useDefaultsForDelta = false;
         this._onCheckIgnoreDelta = null;
+        this._params = {};
     }
 
     get ignoreDelta() {
@@ -36,6 +37,19 @@ class ConfigSectionMeta
 
     get useDefaultsForDelta() {
         return this._useDefaultsForDelta;
+    }
+
+    setParam(name, value)
+    {
+        this._params[name] = value;
+        return this; 
+    }
+
+    getParam(name) {
+        if (name in this._params) {
+            return this._params[name]
+        }
+        return null;
     }
 
     markIgnoreDelta()
