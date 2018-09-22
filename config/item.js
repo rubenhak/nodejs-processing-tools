@@ -256,7 +256,7 @@ class ConfigItem
     _areConfigsEqual(key, baseConfig, myConfig)
     {
         if (this.meta.useDefaultsForDelta) {
-            var arrayMeta = item.meta.getConfigArrayMetadata(key);
+            var arrayMeta = this.meta.getConfigArrayMetadata(key);
             return  _.isDefaultedEqual(baseConfig, myConfig, arrayMeta);
         }
         return _.fastDeepEqual(baseConfig, myConfig);
