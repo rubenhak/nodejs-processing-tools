@@ -52,6 +52,16 @@ class ConfigSectionMeta
         return null;
     }
 
+    setConfigArrayMetadata(key, value)
+    {
+        return this.setParam(_.toUpper(key) + "_CONFIG_ARRAY_METADATA", value);
+    }
+
+    getConfigArrayMetadata(key)
+    {
+        return this.getParam(_.toUpper(key) + "_CONFIG_ARRAY_METADATA");
+    }
+
     markIgnoreDelta()
     {
         this._ignoreDelta = true;

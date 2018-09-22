@@ -253,6 +253,15 @@ class ConfigItem
         return null;
     }
 
+    _areConfigsEqual(key, baseConfig, myConfig)
+    {
+        if (this.meta.useDefaultsForDelta) {
+            var arrayMeta = item.meta.getConfigArrayMetadata(key);
+            return  _.isDefaultedEqual(baseConfig, myConfig, arrayMeta);
+        }
+        return _.fastDeepEqual(baseConfig, myConfig);
+    }
+
     _produceDeltaConfigs(baseItem)
     {
         var deltaConfigs = {};
@@ -261,12 +270,7 @@ class ConfigItem
             var myConfig = this._config[key];
             if (key in baseConfigs) {
                 var baseConfig = baseConfigs[key];
-                var isEqual = false; 
-                if (this.meta.useDefaultsForDelta) {
-                    isEqual = _.isDefaultedEqual(baseConfig, myConfig);
-                } else {
-                    isEqual = _.fastDeepEqual(baseConfig, myConfig);
-                }
+                var isEqual = this._areConfigsEqual(key, baseConfig, myConfig); 
                 if (!isEqual) {
                     deltaConfigs[key] = {
                         oldValue: baseConfig,
