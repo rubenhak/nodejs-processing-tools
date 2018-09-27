@@ -1,4 +1,5 @@
 const RootMeta = require('./meta');
+const _ = require('the-lodash');
 
 class RelationInfo
 {
@@ -110,6 +111,12 @@ class RelationConstructor
 
     relation(targetSectionName, targetNaming)
     {
+        if (_.isNullOrUndefined(targetNaming)) {
+            var dnInfo = this.meta.root.breakDn(targetSectionName);
+            targetSectionName = dnInfo.metaName;
+            targetNaming = dnInfo.naming;
+        }
+
         var relationInfo = new RelationInfo(this._item.dn);
         relationInfo._setupSource(this._item.meta.name, this._item.naming);
         relationInfo._setupTarget(targetSectionName, targetNaming);
@@ -119,6 +126,12 @@ class RelationConstructor
 
     inverseRelation(sourceSectionName, sourceNaming)
     {
+        if (_.isNullOrUndefined(sourceNaming)) {
+            var dnInfo = this.meta.root.breakDn(sourceSectionName);
+            sourceSectionName = dnInfo.metaName;
+            sourceNaming = dnInfo.naming;
+        }
+
         var relationInfo = new RelationInfo(this._item.dn);
         relationInfo._setupSource(sourceSectionName, sourceNaming);
         relationInfo._setupTarget(this._item.meta.name, this._item.naming);
