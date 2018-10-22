@@ -11,6 +11,10 @@ class BaseThrottler
         this._waitingActions = [];
     }
 
+    get hasWaitingActions() {
+        return this._waitingActions.length > 0;
+    }   
+
     execute(action, name)
     {
         if (!_.isFunction(action)) {
@@ -106,7 +110,7 @@ class BaseThrottler
 
     _tryProcessWaitingActions()
     {
-        while((this._waitingActions.length > 0) && this._canRun())
+        while(this.hasWaitingActions && this._canRun())
         {
             var actionInfo = this._waitingActions.splice(0, 1)[0];
             this._executeAction(actionInfo);

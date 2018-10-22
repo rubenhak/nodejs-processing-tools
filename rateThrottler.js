@@ -34,6 +34,9 @@ class RateThrottler extends BaseThrottler
         if (this._processedDates.length == 0) {
             return;
         }
+        if (!this.hasWaitingActions) {
+            return;
+        }
 
         var minDate = _.min(this._processedDates);
         var deltaMs = this.interval - (new Date().getTime() - minDate.getTime());
