@@ -9,6 +9,10 @@ class ConcurrentThrottler extends BaseThrottler
     {
         super(logger);
         this._config = config;
+
+        if (!this.number) {
+            throw new Error("number not set.")
+        }
     }
 
     get number() {

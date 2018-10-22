@@ -9,6 +9,13 @@ class RateThrottler extends BaseThrottler
         this._config = config;
         this._processedDates = [];
         this._timer = null;
+
+        if (!this.interval) {
+            throw new Error("interval not set.")
+        }
+        if (!this.number) {
+            throw new Error("number not set.")
+        }
     }
 
     get interval() {
