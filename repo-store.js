@@ -10,11 +10,17 @@ class RepoStore
     {
         this._logger = logger;
         this._name = name;
+        this._persistenceDir = null;
 
         this._repositories = {};
 
-        this.setupRepository('dirtyRepos', 'DIRTY REPOSITORIES').markDoNotPersist();
-        this.setupRepository('suppressed', 'SUPPRESSED DIRTY RESOURCES').markDoNotPersist();
+        this.setupRepository('dirtyRepos').description('DIRTY REPOSITORIES').markDoNotPersist();
+        this.setupRepository('suppressed').description('SUPPRESSED DIRTY RESOURCES').markDoNotPersist();
+    }
+
+    setupPersistence(dir)
+    {
+        this._persistenceDir = dir;
     }
 
     get repos() {
@@ -23,25 +29,45 @@ class RepoStore
 
     getRepository(name)
     {
-        var info = this._getRepositoryInfo(name);
-        return info.data;
+        var repoInfo = this._getRepositoryInfo(name);
+        this._accessRepo(repoInfo);
+        return repoInfo.data;
     }
 
-    setupRepository(name, info, processorCb, processorLevels)
+    setupRepository(name)
     {
-        var repoInfo = {
-            name: name,
-            info: info,
-            processorCb: processorCb,
-            processorLevels: processorLevels,
-            data: {},
+        var repoInfo = this._repositories[name];
+        if (!repoInfo) {
+            repoInfo = {
+                name: name,
+                info: "",
+                doNotPersist: false,
+                processorCb: null,
+                processorLevels: null,
+                isLoaded: false,
+                origData: {},
+                data: {}
+            }
+            this._repositories[name] = repoInfo;
+        }
+
+        var builder = {
+            description: (value) => {
+                repoInfo.info = value;
+                return builder;
+            },
+            handleDirty: (cb, levels) => {
+                repoInfo.processorCb = cb;
+                repoInfo.processorLevels = levels;
+                return builder;
+            },
             markDoNotPersist: () => {
                 repoInfo.doNotPersist = true;
-                return repoInfo;
+                return builder;
             }
-        };
-        this._repositories[name] = repoInfo;
-        return repoInfo;
+        }
+
+        return builder;
     }
 
     at(name, keyPath)
@@ -182,7 +208,6 @@ class RepoStore
 
     unmarkDirtyRepo(name, path)
     {
-        var repoInfo = this._getRepositoryInfo(name);
         var fullPath = _.concat(name, path);
         this._logger.info('[unmarkDirtyRepo] %s: ', name, path);
         this.delete('dirtyRepos', fullPath, true);
@@ -225,85 +250,87 @@ class RepoStore
         return this._repositories[name];
     }
 
-    outputRepository(name)
-    {
-        this._logger.silly('[outputRepository] %s::%s...', this._name, name);
-
-        var info = this._getRepositoryInfo(name);
-        this._logger.silly('%s: ', info.info, info.data);
-
-        return this._outputRepositoryToFile(name);
-    }
-
-    _outputRepositoryToFile(name)
-    {
-        var fileName = this._name + '-' + name + '.json';
-        var info = this._getRepositoryInfo(name);
-        return this._logger.outputFile(fileName, info.data);
-    }
-
     outputRepositories()
     {
         return Promise.serial(this.repos, x => this.outputRepository(x));
     }
-
-    saveToFile(dirPath)
+    outputRepository(name)
     {
-        shell.mkdir('-p', dirPath);
-
-        return Promise.serial(_.keys(this._repositories), x => this._saveRepoToFile(x, dirPath));
+        this._logger.silly('[outputRepository] %s::%s...', this._name, name);
+        return this._outputRepositoryToFile(name);
+    }
+    _outputRepositoryToFile(name)
+    {
+        var fileName = this._name + '-' + name + '.json';
+        var info = this.getRepository(name);
+        return this._logger.outputFile(fileName, info.data);
     }
 
-    _saveRepoToFile(name, dirPath)
+    persistStore()
+    {
+        if (!this._persistenceDir) {
+            return;
+        }
+
+        shell.mkdir('-p', this._persistenceDir);
+        return Promise.serial(_.keys(this._repositories), x => this._saveRepoToFile(x));
+    }
+
+    _saveRepoToFile(name)
     {
         var repoInfo = this._getRepositoryInfo(name);
         if (repoInfo.doNotPersist) {
             return;
         }
+        if (!repoInfo.isLoaded) {
+            return;
+        }
+        if (_.fastDeepEqual(repoInfo.origData, repoInfo.data)) {
+            return;
+        }
         return new Promise((resolve, reject) => {
-            var filePath = path.join(dirPath, name + '.json');
+            var filePath = path.join(this._persistenceDir, name + '.json');
             var persistenceData = repoInfo.data;
             fs.writeFile(filePath, JSON.stringify(persistenceData, null, 4), (err) => {
                 if (err) {
                     reject(err);
                     return;
                 }
+                repoInfo.origData = repoInfo.data;
                 resolve();
             });
         });
     }
 
-    loadFromFile(dirPath)
+    _accessRepo(repoInfo)
     {
-        return Promise.serial(_.keys(this._repositories), x => this._loadRepoFromFile(x, dirPath));
-    }
-
-    _loadRepoFromFile(name, dirPath)
-    {
-        var repoInfo = this._getRepositoryInfo(name);
+        if (!this._persistenceDir) {
+            return;
+        }
         if (repoInfo.doNotPersist) {
             return;
         }
-        return new Promise((resolve, reject) => {
-            var filePath = path.join(dirPath, name + '.json');
-            this._logger.verbose('[loadRepoFromFile] %s from %s...', name, filePath);
-            if (!fs.existsSync(filePath)) {
-                resolve();
-                return;
-            }
+        if (repoInfo.isLoaded) {
+            return;
+        }
+        this._loadRepoFromFile(repoInfo)
+        repoInfo.isLoaded = true;
+    }
 
-            fs.readFile(filePath, (err, data) => {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                var persistenceData = JSON.parse(data);
-                this._logger.verbose('[loadRepoFromFile] %s data:', name, persistenceData);
+    _loadRepoFromFile(repoInfo)
+    {
+        var filePath = path.join(this._persistenceDir, repoInfo.name + '.json');
+        if (fs.existsSync(filePath)) {
+            var contents = fs.readFileSync(filePath);
+            var persistenceData = JSON.parse(contents);
+            this._logger.silly('[_loadRepoFromFile] %s data:', repoInfo.name, persistenceData);
 
-                repoInfo.data = persistenceData;
-                resolve();
-            });
-        });
+            repoInfo.data = persistenceData;
+            repoInfo.origData = _.cloneDeep(persistenceData);
+        } else {
+            repoInfo.data = {};
+            repoInfo.origData = {};
+        }
     }
 
 }
