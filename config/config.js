@@ -209,8 +209,17 @@ class Config
         if (filter) {
             sections = sections.filter(filter);
         }
-        return Promise.serial(sections, sectionMeta => this._extractSection(sectionMeta, scope))
+        var sectionGroups = _.groupBy(sections, x => x._priority);
+        var priorities = _.keys(sectionGroups);
+        priorities = _.sortBy(priorities, x => parseInt(x));
+        return Promise.serial(priorities, x => this._extractSections(x, sectionGroups[x], scope))
             .then(() => this._performPostProcess());
+    }
+
+    _extractSections(priority, sections, scope)
+    {
+        this._logger.verbose('[_extractSections] Priority: %s...', priority);
+        return Promise.serial(sections, sectionMeta => this._extractSection(sectionMeta, scope))
     }
 
     _performPostProcess()

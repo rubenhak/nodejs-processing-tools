@@ -338,6 +338,31 @@ class ConfigItem
 
     addToDeltaDict(deltaDict, state, itemDelta)
     {
+        if (state == 'recreate') {
+            if (this._cannotCreate) {
+                this._logger.verbose("[addToDeltaDict] %s :: cannot recreate becase _cannotCreate...", this.dn);
+                return;
+            }
+            if (this._cannotDelete) {
+                this._logger.verbose("[addToDeltaDict] %s :: cannot recreate becase _cannotDelete.", this.dn);
+                return;
+            }
+        } else if (state == 'create') {
+            if (this._cannotCreate) {
+                this._logger.verbose("[addToDeltaDict] %s :: cannot create.", this.dn);
+                return;
+            }
+        } else if (state == 'delete') {
+            if (this._cannotDelete) {
+                this._logger.verbose("[addToDeltaDict] %s :: cannot delete.", this.dn);
+                return;
+            }
+        } else if (state == 'update') {
+            if (this._cannotUpdate) {
+                this._logger.verbose("[addToDeltaDict] %s :: cannot update.", this.dn);
+                return;
+            }
+        }
         if (this.meta._onCheckIgnoreDelta) {
             if (this.meta._onCheckIgnoreDelta(this, state, itemDelta)) {
                 return;
@@ -418,6 +443,23 @@ class ConfigItem
         {
             writer.write('Id: ' + JSON.stringify(this.id));
         }
+        if (this._isSubtitute)
+        {
+            writer.write('IsSubtitute');
+        }
+        if (this._cannotCreate)
+        {
+            writer.write('CannotCreate');
+        }
+        
+        if (this._cannotDelete)
+        {
+            writer.write('CannotDelete');
+        }
+        if (this._cannotUpdate)
+        {
+            writer.write('CannotUpdate');
+        }
         writer.write('IsConfig: ' + this.isConfig);
         if (this.taskLabels) {
             writer.write('taskLabels: ' + JSON.stringify(this.taskLabels));
@@ -488,6 +530,12 @@ class ConfigItem
                 this._logger.verbose('Accepted runtime for %s object:', this.dn, this._runtime);
             })
             .then(() => {
+                var subInfo = this.meta.getSubstituteInfo(this.id);
+                if (subInfo) {
+                    this.markSubstitute();
+                }
+            })
+            .then(() => {
                 this.root.deleteRelationsByOwner(this.dn);
                 var relationConstructor = new RelationConstructor(this);
                 this.meta.extractRelations(relationConstructor);
@@ -518,6 +566,33 @@ class ConfigItem
             rel.markIgnoreDependency();
         }
         return this.root.registerRelation(rel);
+    }
+
+    markSubstitute()
+    {
+        this._isSubtitute = true;
+        return this
+            .markCannotCreate()
+            .markCannotDelete()
+            .markCannotUpdate();
+    }
+
+    markCannotCreate()
+    {
+        this._cannotCreate = true;
+        return this;
+    }
+
+    markCannotDelete()
+    {
+        this._cannotDelete = true;
+        return this;
+    }
+
+    markCannotUpdate()
+    {
+        this._cannotUpdate = true;
+        return this;
     }
 
     static createNew(root, meta, naming)

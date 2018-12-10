@@ -28,6 +28,35 @@ class ConfigSection
 
     queryAll()
     {
+        return Promise.resolve()
+            .then(() => this._queryList())
+            .then(() => this._querySubstitutes())
+            .then(() => {
+                if (!this.meta._onPostQueryAll) {
+                    return;
+                }
+                return this.meta._onPostQueryAll(this.items);
+            });
+    }
+
+    _querySubstitutes()
+    {
+        return Promise.serial(this.meta._substitutes, x => this._querySubstitute(x));
+    }
+
+    _querySubstitute(subtitute)
+    {
+        this._logger.verbose('Querying subtitute %s :: %s :: %s...', this.meta.name, subtitute.id, subtitute.naming);
+        return this.meta.query(subtitute.id)
+            .then(obj => {
+                this._logger.verbose('Subtitue %s :: %s Result: ', this.meta.name, subtitute.id, obj);
+                return this.mergeItem(obj);
+            });
+    }
+
+    _queryList()
+    {
+
         if (!this.meta._queryAll) {
             return Promise.resolve();
         }
@@ -36,7 +65,7 @@ class ConfigSection
             .then(result => {
                 this._logger.verbose('Querying section %s, Result received.', this.meta.name);
                 this._logger.silly('Querying section %s, Result:', this.meta.name, result);
-                return this._mergeResult(result);
+                return Promise.serial(result, obj => this.mergeItem(obj));
             });
     }
 
@@ -107,7 +136,6 @@ class ConfigSection
             return;
         }
         //this._logger.info('Section %s query result:', section.meta.name, result);
-        return Promise.serial(result, obj => this.mergeItem(obj));
     }
 
     mergeItem(obj, autoCreateRuntime)
@@ -118,10 +146,7 @@ class ConfigSection
         }
         this._logger.verbose('Merging item to section %s', this.meta.name, obj);
         var naming = this.meta.extractNaming(obj, autoCreateRuntime);
-        this._logger.verbose('New Item naming %s', naming);
-        var item = ConfigItem.createNew(this._root, this.meta, naming);
-        this._logger.verbose('New Item: %s', item.dn);
-        item = this._insertItem(item);
+        var item = this.create(naming);
         return item.acceptObj(obj);
     }
 

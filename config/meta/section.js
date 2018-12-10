@@ -17,6 +17,9 @@ class ConfigSectionMeta
         this._useDefaultsForDelta = false;
         this._onCheckIgnoreDelta = null;
         this._params = {};
+        this._substitutes = [];
+        this._substituteIdMap = {};
+        this._priority = 100;
     }
 
     get ignoreDelta() {
@@ -77,6 +80,12 @@ class ConfigSectionMeta
         return this;
     }
 
+    priority(value)
+    {
+        this._priority = value;
+        return this;    
+    }
+
     onQueryAll(callback)
     {
         if (this._queryAll) {
@@ -85,7 +94,16 @@ class ConfigSectionMeta
         this._queryAll = callback;
         return this;
     }
-
+    
+    onPostQueryAll(callback)
+    {
+        if (this._onPostQueryAll) {
+            throw new Error('Already present');
+        }
+        this._onPostQueryAll = callback;
+        return this;
+    }
+    
     onQuery(callback)
     {
         if (this._onQuery) {
@@ -278,6 +296,13 @@ class ConfigSectionMeta
 
     extractNaming(obj, runtime)
     {
+        var id = this.extractId(obj);
+        if (id) {
+            var subInfo = this.getSubstituteInfo(id);
+            if (subInfo) {
+                return _.clone(subInfo.naming);
+            }
+        }
         if (!this._extractNaming) {
             return null;
         }
@@ -377,6 +402,21 @@ class ConfigSectionMeta
     {
         this._useDefaultsForDelta = true;
         return this;
+    }
+
+    substitute(naming, id)
+    {
+        var info = {
+            dn: this.constructDn(naming),
+            naming: naming,
+            id: id
+        }
+        this._substitutes.push(info);
+        this._substituteIdMap[info.id] = info;
+    }
+
+    getSubstituteInfo(id) {
+        return this._substituteIdMap[id];
     }
 }
 
