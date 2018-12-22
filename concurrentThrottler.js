@@ -1,6 +1,4 @@
 const _ = require('the-lodash');
-const Promise = require('the-promise');
-const uuid = require('uuid/v4');
 const BaseThrottler = require('./baseThrottler');
 
 class ConcurrentThrottler extends BaseThrottler
