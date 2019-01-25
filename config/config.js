@@ -203,7 +203,7 @@ class Config
         return this._sections[name];
     }
 
-    extract(scope, filter)
+    extract(filter)
     {
         var sections = this._meta.sections;
         if (filter) {
@@ -212,14 +212,14 @@ class Config
         var sectionGroups = _.groupBy(sections, x => x._priority);
         var priorities = _.keys(sectionGroups);
         priorities = _.sortBy(priorities, x => parseInt(x));
-        return Promise.serial(priorities, x => this._extractSections(x, sectionGroups[x], scope))
+        return Promise.serial(priorities, x => this._extractSections(x, sectionGroups[x]))
             .then(() => this._performPostProcess());
     }
 
-    _extractSections(priority, sections, scope)
+    _extractSections(priority, sections)
     {
         this._logger.verbose('[_extractSections] Priority: %s...', priority);
-        return Promise.serial(sections, sectionMeta => this._extractSection(sectionMeta, scope))
+        return Promise.serial(sections, sectionMeta => this._extractSection(sectionMeta))
     }
 
     _performPostProcess()
@@ -404,10 +404,10 @@ class Config
         return this.loadFromData(data);
     }
 
-    _extractSection(sectionMeta, scope)
+    _extractSection(sectionMeta)
     {
         var section = this._sections[sectionMeta.name];
-        return section.queryAll(scope);
+        return section.queryAll();
     }
 
     debugOutputToFile(fileName)

@@ -98,7 +98,12 @@ class ModelProcessor
     _extractConfig(sectionFilter)
     {
         this._currentConfig = new Config(this._configMeta);
-        return this._currentConfig.extract(this.clusterName, sectionFilter);
+        return this._currentConfig.extract(sectionFilter);
+    }
+
+    _postCurrentConfigSetup()
+    {
+
     }
 
     _createDesired()
@@ -229,17 +234,6 @@ class ModelProcessor
     _finalizeSetup()
     {
         /* TO BE IMPLEMENTED */
-    }
-
-    _extractCurrent()
-    {
-        return this._extractConfig();
-    }
-
-    _extractConfig(sectionFilter)
-    {
-        this._currentConfig = new Config(this._configMeta);
-        return this._currentConfig.extract(this.clusterName, sectionFilter);
     }
 
     _setCurrentConfigStage(name)
