@@ -1,6 +1,5 @@
 const Promise = require('the-promise');
 const _ = require('the-lodash');
-const fs = require('fs');
 const Path = require('path');
 const prettyMs = require('pretty-ms');
 
@@ -38,7 +37,6 @@ class ModelProcessor
             finalizeDesired: null,
             preProcessDelta: null,
             processDelta: 'process-delta',
-            decideNextSteps: 'decide-next-steps',
             postProcessDelta: null
         };
 
@@ -48,7 +46,6 @@ class ModelProcessor
         this.setupStage('extract-current', this._extractCurrent.bind(this));
         this.setupStage('create-desired', this._createDesired.bind(this));
         this.setupStage('process-delta', this._processDelta.bind(this));
-        this.setupStage('decide-next-steps', this._decideNextSteps.bind(this));
         this.setupStage('autoconfig-desired', () => {
             return this._desiredConfig.performAutoConfig();
         });
@@ -161,7 +158,7 @@ class ModelProcessor
             });
     }
 
-    setup()
+    _setup()
     {
         this._logger.info('Setup...');
         return Promise.resolve()
@@ -210,8 +207,7 @@ class ModelProcessor
     {
         this._logger.info('Postponing next stage for %s seconds...', timeoutSec);
 
-        this.singleStageResult.needMore = true;
-        this.singleStageResult.needMoreReasons.push('PostponeWithTimeout. ' + reason);
+        this.markNewStageNeeded('PostponeWithTimeout. ' + reason);
 
         var postponeTill = new Date();
         postponeTill.setSeconds(postponeTill.getSeconds() + timeoutSec);
@@ -271,17 +267,19 @@ class ModelProcessor
 
     _processIteration()
     {
-        this.newIteration();
-
-        if (this._lastDeltaConfig) {
-            this.setSingleStageData('lastDeltaConfig', this._lastDeltaConfig);
-        }
-
-        if (this.configStore) {
-            this.setSingleStageData('configStore', this.configStore._repo);
-        }
-
         return Promise.resolve()
+            .then(() => this._setup())
+            .then(() => {
+                this.newIteration();
+
+                if (this._lastDeltaConfig) {
+                    this.setSingleStageData('lastDeltaConfig', this._lastDeltaConfig);
+                }
+        
+                if (this.configStore) {
+                    this.setSingleStageData('configStore', this.configStore._repo);
+                }
+            })
             .then(() => this._runProcessorStage(this._iterationStages.interationInit))
 
             .then(() => this._runProcessorStage(this._iterationStages.extractCurrent))
@@ -315,12 +313,84 @@ class ModelProcessor
             .then(() => this._outputDesiredConfigStage('final'))
             .then(() => this._setDeltaStage('final'))
 
-            .then(() => this._runProcessorStage(this._iterationStages.decideNextSteps))
+            .catch(reason => this._digestIterationError(reason))
+
+            .then(() => this._decideNextSteps())
 
             .then(() => {
                 this._logger.info('singleStageResult: ', this.singleStageResult);
             })
             .then(() => this.singleStageResult);
+    }
+
+    _digestIterationError(reason)
+    {
+        // TODO
+        this._logger.warn('[_digestIterationError] ', reason);
+
+        if (reason instanceof SkipFurtherStagesError) {
+            return;
+        }
+
+        if (reason instanceof MissingConfigurationError) {
+            this.singleStageResult.isFailed = true;
+            this.singleStageResult.message = reason.message;
+            return;
+        }
+
+        this._logger.error('ERROR during processing: ', reason);
+        this.singleStageResult.hasError = true;
+        this.singleStageResult.message = reason.message;
+        this.postponeWithTimeout(120, reason.message);
+    }
+    
+    _decideNextSteps()
+    {
+        if (this.singleStageResult.isFailed) {
+            return;
+        }
+
+        if (!this.singleStageResult.needMore)
+        {
+            var deltaConfig = this._singleStageData['finalDelta'];
+            if (!deltaConfig) {
+                this.markNewStageNeeded('FinalDeltaMissing');
+                return;
+            }
+
+            if (deltaConfig.length > 0)
+            {
+                if (this._lastDeltaConfig)
+                {
+                    if (_.isEqual(this._lastDeltaConfig, deltaConfig))
+                    {
+                        this._logger.info('Final Delta is same as Last Final Delta. Thus not marking needMore.');
+                    }
+                    else
+                    {
+                        this.markNewStageNeeded('FinalDeltaDifferentFromLastDelta');
+                    }
+                }
+                else
+                {
+                    this.markNewStageNeeded('NoLastDeltaPresent');
+                }
+            }
+        }
+    }
+
+    markConfigurationMissing(message)
+    {
+        this.singleStageResult.skipFurtherStages = true;
+        this.singleStageResult.skipStagesReasons.push(message);
+        throw new MissingConfigurationError(message);
+    }
+
+    skipFurtherStages(message)
+    {
+        this.singleStageResult.skipFurtherStages = true;
+        this.singleStageResult.skipStagesReasons.push(message);
+        throw new SkipFurtherStagesError(message);
     }
 
     _runProcessorStage(stage, args)
@@ -416,41 +486,15 @@ class ModelProcessor
             ;
     }
 
-    _decideNextSteps()
-    {
-        var deltaConfig = this._singleStageData['finalDelta'];
-
-        if (!this.singleStageResult.needMore)
-        {
-            if (deltaConfig.length > 0)
-            {
-                if (this._lastDeltaConfig)
-                {
-                    if (_.isEqual(this._lastDeltaConfig, deltaConfig))
-                    {
-                        this._logger.info('Final Delta is same as Last Final Delta. Thus not marking needMore.');
-                    }
-                    else
-                    {
-                        this._logger.info('Final Delta is different from Last Final Delta. Marking needMore.');
-                        this.singleStageResult.needMore = true;
-                        this.singleStageResult.needMoreReasons.push('FinalDeltaDifferentFromLastDelta');
-                    }
-                }
-                else
-                {
-                    this._logger.info('No Last Filnal Delta present. Marking needMore.');
-                    this.singleStageResult.needMore = true;
-                    this.singleStageResult.needMoreReasons.push('NoLastDeltaPresent');
-                }
-            }
-        }
-    }
 
     get singleStageResult() {
         if (!this._singleStageResult) {
             this._singleStageResult = {
+                hasError: false,
+                isFailed: false, 
+                message: '',
                 skipFurtherStages: false,
+                skipStagesReasons: [],
                 needMore: false,
                 needMoreReasons: [],
                 postponeTill: null
@@ -461,7 +505,7 @@ class ModelProcessor
 
     markNewStageNeeded(reason)
     {
-        this._logger.info('Marking needs retry...');
+        this._logger.info('Marking needMore: ', reason);
         this.singleStageResult.needMore = true;
         this.singleStageResult.needMoreReasons.push('NewStageNeeded:' + reason);
     }
@@ -524,5 +568,27 @@ class ModelProcessor
         return writer.close();
     }
 }
+
+class SkipFurtherStagesError extends Error
+{
+    constructor(message)
+    {
+      super(message);
+      this.name = this.constructor.name;
+      Error.captureStackTrace(this, this.constructor);
+    }
+}
+
+class MissingConfigurationError extends Error
+{
+    constructor(message)
+    {
+      super(message);
+      this.name = this.constructor.name;
+      Error.captureStackTrace(this, this.constructor);
+    }
+}
+
+
 
 module.exports = ModelProcessor;

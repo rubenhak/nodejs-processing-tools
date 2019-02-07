@@ -419,5 +419,4 @@ class ConfigSectionMeta
         return this._substituteIdMap[id];
     }
 }
-
 module.exports = ConfigSectionMeta;
