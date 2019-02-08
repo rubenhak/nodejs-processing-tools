@@ -492,7 +492,7 @@ class ModelProcessor
             this._singleStageResult = {
                 hasError: false,
                 isFailed: false, 
-                message: '',
+                message: null,
                 skipFurtherStages: false,
                 skipStagesReasons: [],
                 needMore: false,
