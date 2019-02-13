@@ -28,6 +28,7 @@ class ModelProcessor
         this._configStore = new ConfigStore(this._logger.sublogger('ConfigStore'));
 
         this._iterationStages = {
+            preSetup: null,
             interationInit: null,
             extractCurrent: 'extract-current',
             stabilizeCurrent: null,
@@ -37,7 +38,8 @@ class ModelProcessor
             finalizeDesired: null,
             preProcessDelta: null,
             processDelta: 'process-delta',
-            postProcessDelta: null
+            postProcessDelta: null,
+            finish: null
         };
 
         this.setupStage('process-iteration', this._processIteration.bind(this));
@@ -162,14 +164,8 @@ class ModelProcessor
     {
         this._logger.info('Setup...');
         return Promise.resolve()
-            .then(() => this._preSetup())
             .then(() => this._setupConfigMeta())
             .then(() => this._finalizeSetup());
-    }
-
-    _preSetup()
-    {
-
     }
 
     addConfigEntries(configEntries)
@@ -268,6 +264,8 @@ class ModelProcessor
     _processIteration()
     {
         return Promise.resolve()
+            .then(() => this._runProcessorStage(this._iterationStages.preSetup))
+
             .then(() => this._setup())
             .then(() => {
                 this.newIteration();
@@ -316,6 +314,9 @@ class ModelProcessor
             .catch(reason => this._digestIterationError(reason))
 
             .then(() => this._decideNextSteps())
+
+            .then(() => this._runProcessorStage(this._iterationStages.finish))
+            .catch(reason => this._digestIterationError(reason))
 
             .then(() => {
                 this._logger.info('singleStageResult: ', this.singleStageResult);
