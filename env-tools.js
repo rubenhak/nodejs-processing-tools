@@ -62,9 +62,14 @@ exports.substituteEnvironment = function(envDict, substitutions)
     for(var key of _.keys(result))
     {
         var val = result[key];
+        // TODO: clean this crap up.
         for(var replacement of _.keys(substitutions))
         {
             val = _.replace(val, '${' + replacement +'}', substitutions[replacement]);
+        }
+        for(var replacement of _.keys(envDict))
+        {
+            val = _.replace(val, '${' + replacement +'}', envDict[replacement]);
         }
         result[key] = val;
     }
