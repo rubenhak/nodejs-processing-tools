@@ -134,9 +134,15 @@ class ModelProcessor
 
     _setupConfigMeta()
     {
-        var normalizedPath = Path.join(this._modelsDirLocation, "models");
         const modelLogger = this._logger.sublogger('Models');
-        this._configMeta = ConfigMeta.load(normalizedPath, modelLogger, this._metaContext);
+        var normalizedPaths = [];
+        if (this._modelsDirLocation) {
+            normalizedPaths.push(Path.join(this._modelsDirLocation, "models"));
+        }
+        if (this._customModelsDirLocations) {
+            normalizedPaths = _.concat(normalizedPaths, this._customModelsDirLocations)
+        }
+        this._configMeta = ConfigMeta.load(normalizedPaths, modelLogger, this._metaContext);
     }
 
     runStage(name, args)

@@ -30,6 +30,14 @@ class ConfigMeta
         return null;
     }
 
+    tryGet(name)
+    {
+        if (name in this._sections) {
+            return this._sections[name];
+        }
+        return null;
+    }
+
     section(name)
     {
         if (name in this._sections) {
@@ -149,17 +157,20 @@ class ConfigMeta
         };
     }
 
-    static load(normalizedPath, logger, context)
+    static load(normalizedPaths, logger, context)
     {
         var configMeta = new ConfigMeta(logger);
-        fs.readdirSync(normalizedPath).forEach((file) => {
-            var includePath = Path.join(normalizedPath, file);
-            var metaName = _.replace(file, '.js', '');
-            var metaSection = configMeta.section(metaName);
-            var metaSectionInit = require(includePath);
-            metaSectionInit(metaSection, logger, context);
-            metaSection.done();
-        });
+        for(var normalizedPath of normalizedPaths)
+        {
+            fs.readdirSync(normalizedPath).forEach((file) => {
+                var includePath = Path.join(normalizedPath, file);
+                var metaName = _.replace(file, '.js', '');
+                var metaSection = configMeta.section(metaName);
+                var metaSectionInit = require(includePath);
+                metaSectionInit(metaSection, logger, context);
+                metaSection.done();
+            });
+        }
         return configMeta;
     }
 
