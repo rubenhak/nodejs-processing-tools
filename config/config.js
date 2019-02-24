@@ -428,10 +428,10 @@ class Config
             for (var relation of relationList) {
                 writer.indent();
                 writer.write(relation.sourceDn + ' => ' + relation.targetDn + ', Target: ' + JSON.stringify(relation.targetId) + ', Resolved: ' + JSON.stringify(relation.resolvedTargetId));
-                if (relation.relation) {
+                if (relation.runtime) {
                     writer.indent();
                     writer.write('Runtime:');
-                    writer.write(relation.relation);
+                    writer.write(relation.runtime);
                     writer.unindent();
                 }
                 if (relation.sourceLeg.autoCreate)
