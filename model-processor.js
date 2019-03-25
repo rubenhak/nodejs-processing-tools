@@ -29,7 +29,7 @@ class ModelProcessor
 
         this._iterationStages = {
             preSetup: null,
-            interationInit: null,
+            iterationInit: null,
             extractCurrent: 'extract-current',
             stabilizeCurrent: null,
             postExtractCurrent: null,
@@ -279,12 +279,12 @@ class ModelProcessor
                 if (this._lastDeltaConfig) {
                     this.setSingleStageData('lastDeltaConfig', this._lastDeltaConfig);
                 }
-        
+
                 if (this.configStore) {
                     this.setSingleStageData('configStore', this.configStore._repo);
                 }
             })
-            .then(() => this._runProcessorStage(this._iterationStages.interationInit))
+            .then(() => this._runProcessorStage(this._iterationStages.iterationInit))
 
             .then(() => this._runProcessorStage(this._iterationStages.extractCurrent))
             .then(() => this._setCurrentConfigStage('initial'))
@@ -350,7 +350,7 @@ class ModelProcessor
         this.singleStageResult.message = reason.message;
         this.postponeWithTimeout(120, reason.message);
     }
-    
+
     _decideNextSteps()
     {
         if (this.singleStageResult.isFailed) {
@@ -498,7 +498,7 @@ class ModelProcessor
         if (!this._singleStageResult) {
             this._singleStageResult = {
                 hasError: false,
-                isFailed: false, 
+                isFailed: false,
                 message: null,
                 skipFurtherStages: false,
                 skipStagesReasons: [],
