@@ -205,15 +205,21 @@ class ModelProcessor
         }
     }
 
+    calculatePostponeDate(timeoutSec)
+    {
+        var postponeTill = new Date();
+        postponeTill.setSeconds(postponeTill.getSeconds() + timeoutSec);
+        postponeTill = postponeTill.toISOString();
+        return postponeTill;
+    }
+
     postponeWithTimeout(timeoutSec, reason)
     {
         this._logger.info('Postponing next stage for %s seconds...', timeoutSec);
 
         this.markNewStageNeeded('PostponeWithTimeout. ' + reason);
 
-        var postponeTill = new Date();
-        postponeTill.setSeconds(postponeTill.getSeconds() + timeoutSec);
-        postponeTill = postponeTill.toISOString();
+        var postponeTill = this.calculatePostponeDate(timeoutSec);
         if (this.singleStageResult.postponeTill)
         {
             if (postponeTill > this.singleStageResult.postponeTill)
