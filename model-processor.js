@@ -213,6 +213,12 @@ class ModelProcessor
         return postponeTill;
     }
 
+    postponeWithTimeoutAndSkip(timeoutSec, reason)
+    {
+        this.postponeWithTimeout(timeoutSec, reason);
+        this.skipFurtherStages(reason);
+    }
+
     postponeWithTimeout(timeoutSec, reason)
     {
         this._logger.info('Postponing next stage for %s seconds...', timeoutSec);
