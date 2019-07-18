@@ -494,6 +494,24 @@ class ModelProcessor
                 this.singleStageResult.processResult = result;
                 this.singleStageResult.hasError = result.hasError;
 
+                if (result.taskErrors)
+                {
+                    for(var taskError of result.taskErrors)
+                    {
+                        var target = 'unknown'; ;
+                        var action = 'unknown';
+                        if (taskError.taskId) {
+                            target = taskError.taskId.dn;
+                            action = taskError.taskId.action;
+                        }
+                        this.singleStageResult.errors.push({
+                            target: target,
+                            action: action,
+                            message: taskError.message
+                        })
+                    }
+                }
+
                 if (!result) {
                     this.markNewStageNeeded('ResultNotPresent');
                 } else {
@@ -512,6 +530,7 @@ class ModelProcessor
                 hasError: false,
                 isFailed: false,
                 message: null,
+                errors: [],
                 skipFurtherStages: false,
                 skipStagesReasons: [],
                 needMore: false,

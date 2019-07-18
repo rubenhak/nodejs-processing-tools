@@ -23,6 +23,7 @@ class DependencyProcessor
         this._failedTasks = {};
         this._runningTasks = {};
         this._currentLabels = {};
+        this._taskErrors = [];
         this._isRunning = false;
         this._id = id;
         this._isInsideStep = false;
@@ -54,6 +55,10 @@ class DependencyProcessor
             }
         }
         return tasksByState;
+    }
+
+    get taskErrors() {
+        return this._taskErrors;
     }
 
     _processHealthCheck()
@@ -301,6 +306,20 @@ class DependencyProcessor
             .catch(error => {
                 this._logger.error('%s failed. Error', task.name, error);
                 this._failedTasks[task.name] = task;
+
+                var errorInfo = {
+                    taskId: task.id,
+                    origError: error
+                }
+                if (error) {
+                    errorInfo.errorName = error.name;
+                    errorInfo.message = error.message;
+                    if (error.stack) {
+                        errorInfo.stack = error.stack.split('\n').slice(1);
+                    }
+                }
+                this._taskErrors.push(errorInfo);
+
                 this._markFinalState(task, TaskState.Error, '_runTask::catch');
             });
     }

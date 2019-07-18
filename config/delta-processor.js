@@ -59,6 +59,7 @@ class DeltaProcessor
 
                 var taskCounter = _.mapValues(tasksByState, x => x.length);
 
+                processResult.taskErrors = processor.taskErrors;
                 processResult.failedTaskCount = taskCounter['Error'];
                 processResult.skippedTaskCount = taskCounter['Unqualified'] + taskCounter['Skipped'];
                 processResult.runningTaskCount = taskCounter['Running'] + taskCounter['WaitingFinish'];

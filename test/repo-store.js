@@ -10,5 +10,4 @@ describe('repo-store.js', function() {
             store.setupRepository('contacts').description('PEOPLE LIST');
         });
     });
-
 });
