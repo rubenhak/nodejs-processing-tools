@@ -91,7 +91,15 @@ class ModelProcessor
     _extractCurrent()
     {
         return this._extractConfig()
-            .then(() => this._postCurrentConfigSetup());
+            .then(() => this._postCurrentConfigSetup())
+            .catch(reason => {
+                this.singleStageResult.errors.push({
+                    target: 'processor',
+                    action: 'query-all',
+                    message: reason.message
+                })
+                throw reason;
+            });
     }
 
     _extractConfig(sectionFilter)
@@ -329,12 +337,12 @@ class ModelProcessor
             .then(() => this._outputDesiredConfigStage('final'))
             .then(() => this._setDeltaStage('final'))
 
-            .catch(reason => this._digestIterationError(reason))
+            .catch(reason => this._digestIterationError(reason, 'pre-final'))
 
             .then(() => this._decideNextSteps())
 
             .then(() => this._runProcessorStage(this._iterationStages.finish))
-            .catch(reason => this._digestIterationError(reason))
+            .catch(reason => this._digestIterationError(reason, 'pre-finish'))
 
             .then(() => {
                 this._logger.info('singleStageResult: ', this.singleStageResult);
@@ -342,7 +350,7 @@ class ModelProcessor
             .then(() => this.singleStageResult);
     }
 
-    _digestIterationError(reason)
+    _digestIterationError(reason, checkpointName)
     {
         // TODO
         this._logger.warn('[_digestIterationError] ', reason);
@@ -360,6 +368,13 @@ class ModelProcessor
         this._logger.error('ERROR during processing: ', reason);
         this.singleStageResult.hasError = true;
         this.singleStageResult.message = reason.message;
+
+        this.singleStageResult.errors.push({
+            target: 'processor',
+            action: checkpointName,
+            message: reason.message
+        })
+
         this.postponeWithTimeout(120, reason.message);
     }
 
