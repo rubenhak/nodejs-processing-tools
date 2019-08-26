@@ -4,6 +4,7 @@ const _ = require('the-lodash');
 
 const ConfigSection = require('./section');
 const ConfigRelation = require('./relation');
+const RootMeta = require('./meta');
 
 class Config
 {
