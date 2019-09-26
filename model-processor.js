@@ -587,6 +587,17 @@ class ModelProcessor
         return deltaConfig;
     }
 
+    debugWriteToFile(name, cb)
+    {
+        var writer = this._logger.outputStream(this._iterationNumber + '_' + name + '.txt');
+        if (!writer) {
+            return Promise.resolve();
+        }
+        return Promise.resolve()
+            .then(() => cb(writer))
+            .then(() => writer.close())
+            ;
+    }
 
     _debugOutputDeltaToFile(name, deltaConfig)
     {
@@ -596,29 +607,23 @@ class ModelProcessor
 
     _debugOutputDeltaHighLevelToFile(name, deltaConfig)
     {
-        var writer = this._logger.outputStream(this._iterationNumber + '_' + name + '_delta.txt');
-        if (!writer) {
-            return;
-        }
-        for(var x of deltaConfig)
-        {
-            writer.write(x.dn + ' :: ' + x.status);
-        }
-        return writer.close();
+        return this.debugWriteToFile(name + '_delta', writer => {
+            for(var x of deltaConfig)
+            {
+                writer.write(x.dn + ' :: ' + x.status);
+            }
+        });
     }
 
     _debugOutputDeltaDetailedToFile(name, deltaConfig)
     {
-        var writer = this._logger.outputStream(this._iterationNumber + '_' + name + '_delta_detailed.txt');
-        if (!writer) {
-            return;
-        }
-        for(var x of deltaConfig)
-        {
-            writer.write(x.dn + ' :: ' + x.status);
-            writer.write(JSON.stringify(x, null, 4));
-        }
-        return writer.close();
+        return this.debugWriteToFile(name + '_delta_detailed', writer => {
+            for(var x of deltaConfig)
+            {
+                writer.write(x.dn + ' :: ' + x.status);
+                writer.write(JSON.stringify(x, null, 4));
+            }
+        });
     }
 }
 
