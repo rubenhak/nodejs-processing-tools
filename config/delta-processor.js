@@ -55,9 +55,9 @@ class DeltaProcessor
                 processResult.error = error;
             })
             .then(() => {
-                var tasksByState = processor.tasksByState;
+                processor.debugOutputIncompleteTasks();
 
-                var taskCounter = _.mapValues(tasksByState, x => x.length);
+                var taskCounter = _.mapValues(processor.tasksByState, x => x.length);
 
                 processResult.taskErrors = processor.taskErrors;
                 processResult.failedTaskCount = taskCounter['Error'];
@@ -144,13 +144,21 @@ class DeltaProcessor
         var meta = dnInfo.meta;
 
         return Promise.resolve()
-            .then(() => this._processAutoConfig(itemId, dn, meta))
+            .then(() => this._checkDependencies(itemId, dn, meta))
             .then(canContinue => {
-                this._logger.verbose('[_processDeltaItem]: %s. action=%s. canContinue=%s', dn, itemId.action, canContinue);
-
+                this._logger.verbose('[_processDeltaItem]: %s. action=%s. dependencies canContinue=%s', dn, itemId.action, canContinue);
                 if (!canContinue) {
                     return false;
                 }
+
+                return this._processAutoConfig(itemId, dn, meta);
+            })
+            .then(canContinue => {
+                this._logger.verbose('[_processDeltaItem]: %s. action=%s. autoconfig canContinue=%s', dn, itemId.action, canContinue);
+                if (!canContinue) {
+                    return false;
+                }
+
                 if (dn in this._deltaConfig) {
                     var deltaItem = this._deltaConfig[dn];
                     if (itemId.action == 'create') {
@@ -167,11 +175,49 @@ class DeltaProcessor
             });
     }
 
+    _checkDependencies(itemId, dn, meta)
+    {
+        this._logger.verbose('[_checkDependencies]: %s', dn, itemId.action);
+
+        if (itemId.action != "create") {
+            return true;
+        }
+
+        var deltaItem = this._deltaConfig[dn];
+        if (!deltaItem) {
+            return true;
+        }
+
+        for(var relation of deltaItem.item.relations)
+        {
+            var targetItem = relation.targetItem;
+            if (!targetItem) {
+                this._logger.info('[_checkDependencies] missing dependency %s => %s', dn, relations.targetDn);
+                return false;
+            }
+            var resolvedItem = targetItem.resolved;
+            if (!resolvedItem) {
+                this._logger.info('[_checkDependencies] missing resolved %s => %s', dn, resolvedItem.dn);
+                return false;
+            }
+            if (!resolvedItem.isReady) {
+                this._logger.info('[_checkDependencies] dependency not ready %s => %s', dn, resolvedItem.dn);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     _processAutoConfig(itemId, dn, meta)
     {
         this._logger.verbose('[_processAutoConfig]: %s', dn, itemId.action);
 
-        if (meta._autoConfig && itemId.action == "create")
+        if (itemId.action != "create") {
+            return true;
+        }
+
+        if (meta._autoConfig)
         {
             var currentItem = this._currentConfig.findDn(dn);
             var desiredItem = this._desiredConfig.findDn(dn);
@@ -221,7 +267,7 @@ class DeltaProcessor
                         }
 
                         this._logger.verbose('process: %s END AUTOCONFIG. Action: %s.', dn, itemId.action);
-                        return canContinue;
+                        return true;
                     });
             }
         }

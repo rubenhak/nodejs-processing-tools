@@ -1,6 +1,5 @@
 const _ = require('the-lodash');
 const Promise = require('the-promise');
-const uuid = require('uuid/v4');
 
 const TaskState = {
     Idle: 'Idle',
@@ -490,6 +489,21 @@ class DependencyProcessor
         this._logger.error('Processing failed. %s', this._id);
         this.close();
         cb('One or more tasks failed.');
+    }
+
+    debugOutputIncompleteTasks()
+    {
+        var tasksByState = this.tasksByState;
+        var states = [TaskState.Error, TaskState.Unqualified, TaskState.Skipped];
+        for(var state of states)
+        {
+            var tasks = tasksByState[state];
+            this._logger.info('%s Tasks. Count = %s', state, tasks.length);
+            for(var x of tasks)
+            {
+                this._logger.info(' - %s', x.name);
+            }
+        }
     }
 }
 
