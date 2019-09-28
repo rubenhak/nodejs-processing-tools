@@ -197,7 +197,7 @@ class DeltaProcessor
             }
             var resolvedItem = targetItem.resolved;
             if (!resolvedItem) {
-                this._logger.info('[_checkDependencies] missing resolved %s => %s', dn, resolvedItem.dn);
+                this._logger.info('[_checkDependencies] missing resolved %s => %s', dn, targetItem.dn);
                 return false;
             }
             if (!resolvedItem.isReady) {
