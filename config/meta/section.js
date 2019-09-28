@@ -8,6 +8,8 @@ class ConfigSectionMeta
         this._parent = parent;
         this._logger = parent.logger;
         this._name = name;
+        this._autoConfig = null;
+        this._checkReady = null;
         this._onPostCreate = null;
         this._onRelationCreate = {};
         this._onRelationDelete = {};
@@ -155,6 +157,15 @@ class ConfigSectionMeta
             throw new Error('Already present');
         }
         this._extractRelations = callback;
+        return this;
+    }
+
+    onCheckReady(callback)
+    {
+        if (this._checkReady) {
+            throw new Error('Already present');
+        }
+        this._checkReady = callback;
         return this;
     }
 

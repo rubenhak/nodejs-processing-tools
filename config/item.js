@@ -24,6 +24,12 @@ class ConfigItem
         this._runtime = {};
         this._autoCreatedOwners = {};
 
+        if (this.isConfig) {
+            this._isReady = true;
+        } else {
+            this._isReady = false;
+        }
+
         RootMeta.validateNaming(this.naming);
 
         this._obj = null;
@@ -92,6 +98,10 @@ class ConfigItem
 
     get relations() {
         return this.root.getTargetRelations(this.dn);
+    }
+
+    get isReady() {
+        return this._isReady;
     }
     
     exportToData()
@@ -406,6 +416,27 @@ class ConfigItem
         return this.meta.postProcess(this);
     }
 
+    _performReadyCheck()
+    {
+        if (this.isConfig) {
+            this._isReady = true;
+            return;
+        }
+        
+        if (!this.meta._checkReady) {
+            this._isReady = true;
+        } else {
+            return Promise.resolve(this.meta._checkReady(this))
+                .then(result => {
+                    if (result) {
+                        this._isReady = true;
+                    } else {
+                        this._isReady = false;
+                    }
+                })
+        }
+    }
+
     performAutoConfig(action)
     {
         if (this.meta._autoConfig) {
@@ -425,6 +456,7 @@ class ConfigItem
     output()
     {
         this._logger.info('Item: %s, %s, isConfig: %s', this.dn, this.resolvedTargetId, this.isConfig );
+        this._logger.info('    IsReady: %s', this.isReady);
         for (var relation of this.relations) {
             this._logger.info('    => %s, Target: %s, Resolved: %s', relation.targetDn, JSON.stringify(relation.targetId), JSON.stringify(relation.resolvedTargetId) );
         }
@@ -461,6 +493,8 @@ class ConfigItem
             writer.write('CannotUpdate');
         }
         writer.write('IsConfig: ' + this.isConfig);
+        writer.write('IsReady: ' + this.isReady);
+
         if (this.taskLabels) {
             writer.write('taskLabels: ' + JSON.stringify(this.taskLabels));
         }
@@ -544,6 +578,7 @@ class ConfigItem
             .then(() => {
                 return this.performPostProcess();
             })
+            .then(() => this._performReadyCheck())
             .then(() => this);
     }
 
