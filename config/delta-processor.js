@@ -190,6 +190,10 @@ class DeltaProcessor
 
         for(var relation of deltaItem.item.relations)
         {
+            if (relation.shouldIgnoreDelta) {
+                continue;
+            }
+
             var targetItem = relation.targetItem;
             if (!targetItem) {
                 this._logger.info('[_checkDependencies] missing dependency %s => %s', dn, relations.targetDn);
