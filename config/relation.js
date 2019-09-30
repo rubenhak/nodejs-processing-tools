@@ -200,10 +200,14 @@ class ConfigRelation
         return null;
     }
 
+    /* Indicates wheter this relation should participate 
+       in config delta. */
     markIgnoreDelta() {
         this._shouldIgnoreDelta = true;
     }
 
+    /* Indicates wheter this relation should be used to
+       Skip and Unqualify processing of dependent items. */
     markIgnoreDependency() {
         this._shouldIgnoreDependency = true;
     }

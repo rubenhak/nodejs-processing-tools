@@ -91,10 +91,8 @@ class DeltaProcessor
         processor.setDependency(breakerId, itemId);
         for (var relation of item.relations)
         {
-            if (!relation.shouldIgnoreDependency) {
-                var predecessorId = { dn: relation.targetDn, action: 'delete' };
-                processor.setDependency(predecessorId, itemId);
-            }
+            var predecessorId = { dn: relation.targetDn, action: 'delete' };
+            processor.setDependency(predecessorId, itemId);
         }
     }
 
@@ -115,10 +113,8 @@ class DeltaProcessor
         processor.setDependency(itemId, breakerId);
         for (var relation of item.relations)
         {
-            if (!relation.shouldIgnoreDependency) {
-                var predecessorId = { dn: relation.targetDn, action: 'create' };
-                processor.setDependency(itemId, predecessorId);
-            }
+            var predecessorId = { dn: relation.targetDn, action: 'create' };
+            processor.setDependency(itemId, predecessorId);
         }
         if (item.preRunCheckerCb)
         {
@@ -190,7 +186,10 @@ class DeltaProcessor
 
         for(var relation of deltaItem.item.relations)
         {
-            if (relation.shouldIgnoreDelta) {
+            this._logger.info('[_checkDependencies] testing %s => %s...', dn, relation.targetDn);
+
+            if (relation.shouldIgnoreDependency) {
+                this._logger.info('[_checkDependencies] ignore relation %s => %s', dn, relation.targetDn);
                 continue;
             }
 
