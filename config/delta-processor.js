@@ -1,6 +1,6 @@
 const Promise = require('the-promise');
 const _ = require('the-lodash');
-const uuid = require('uuid/v4');
+const { v4: uuid } = require('uuid');
 
 const DependencyProcessor = require('../dependency-processor');
 

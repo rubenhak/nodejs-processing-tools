@@ -10,7 +10,7 @@ description: Library contains variety of tools to help with data processing.
 
 env:
   common:
-    NPM_DEPENDENCIES: ""
+    NPM_DEPENDENCIES: "the-lodash the-promise"
 
 profiles:
   - https://raw.githubusercontent.com/rubenhak/qavor/refs/heads/main/profiles/node-library/qavor.yaml

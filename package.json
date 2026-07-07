@@ -23,12 +23,12 @@
   "dependencies": {
     "date-diff": "1.0.2",
     "ip": "2.0.1",
-    "pretty-ms": "^7.0.1",
+    "pretty-ms": "^9.3.0",
     "shelljs": "0.10.0",
     "the-lodash": "^3.0.3",
     "the-promise": "^3.0.1",
     "toposort": "2.0.2",
-    "uuid": "3.2.1"
+    "uuid": "14.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
