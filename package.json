@@ -1,6 +1,6 @@
 {
   "name": "processing-tools",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Library contains variety of tools to help with data processing.",
   "main": "dist/index.js",
   "types": "dist",
