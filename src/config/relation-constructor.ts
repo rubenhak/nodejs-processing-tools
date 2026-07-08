@@ -1,143 +1,146 @@
-const RootMeta = require('./meta');
-const _ = require('the-lodash');
+import _ from 'the-lodash';
 
-class RelationInfo
-{
-    constructor(ownerDn)
-    {
+import { ConfigMeta } from './meta';
+
+export class RelationInfo {
+    ownerDn: string;
+    sourceAutoCreate: boolean;
+    targetAutoCreate: boolean;
+
+    sourceSectionName?: string;
+    sourceNaming?: any;
+    sourceAutoCreateRuntime?: any;
+    targetSectionName?: string;
+    targetNaming?: any;
+    targetAutoCreateRuntime?: any;
+    targetId?: any;
+    runtime?: any;
+    shouldIgnoreDelta?: boolean;
+    shouldIgnoreDependency?: boolean;
+
+    constructor(ownerDn: string) {
         this.ownerDn = ownerDn;
         this.sourceAutoCreate = false;
         this.targetAutoCreate = false;
     }
 
-    _setupSource(metaName, naming)
-    {
+    _setupSource(metaName: string, naming: any): this {
         this.sourceSectionName = metaName;
         this.sourceNaming = naming;
-        RootMeta.validateNaming(this.sourceNaming);
+        ConfigMeta.validateNaming(this.sourceNaming);
         return this;
     }
 
-    setupSourceAutoCreate(runtime)
-    {
+    setupSourceAutoCreate(runtime: any): this {
         this.sourceAutoCreate = true;
         this.sourceAutoCreateRuntime = runtime;
         return this;
     }
 
-    markIgnoreDelta()
-    {
+    markIgnoreDelta(): this {
         this.shouldIgnoreDelta = true;
         return this;
     }
 
-    markIgnoreDependency()
-    {
+    markIgnoreDependency(): this {
         this.shouldIgnoreDependency = true;
         return this;
     }
 
-    _setupTarget(metaName, naming)
-    {
+    _setupTarget(metaName: string, naming: any): this {
         this.targetSectionName = metaName;
         this.targetNaming = naming;
-        RootMeta.validateNaming(this.targetNaming);
+        ConfigMeta.validateNaming(this.targetNaming);
         return this;
     }
 
-    setupTargetAutoCreate(runtime)
-    {
+    setupTargetAutoCreate(runtime: any): this {
         this.targetAutoCreate = true;
         this.targetAutoCreateRuntime = runtime;
         return this;
     }
 
-    setupTargetId(value)
-    {
+    setupTargetId(value: any): this {
         this.targetId = value;
         return this;
     }
 
-    setupRuntime(runtime)
-    {
+    setupRuntime(runtime: any): this {
         this.runtime = runtime;
         return this;
     }
 }
 
-class RelationConstructor
-{
-    constructor(item)
-    {
+export class RelationConstructor {
+    private _item: any;
+    private _relations: RelationInfo[];
+
+    constructor(item: any) {
         this._item = item;
         this._relations = [];
     }
 
-    get item() {
+    get item(): any {
         return this._item;
     }
 
-    get meta() {
+    get meta(): any {
         return this._item.meta;
     }
 
-    get naming() {
+    get naming(): any {
         return this._item.naming;
     }
 
-    get dn() {
+    get dn(): string {
         return this._item.dn;
     }
 
-    get id() {
+    get id(): any {
         return this._item.id;
     }
 
-    get obj() {
+    get obj(): any {
         return this._item.obj;
     }
 
-    get config() {
+    get config(): any {
         return this._item.config;
     }
 
-    get runtime() {
+    get runtime(): any {
         return this._item.runtime;
     }
 
-    get relationInfos() {
+    get relationInfos(): RelationInfo[] {
         return this._relations;
     }
 
-    relation(targetSectionName, targetNaming)
-    {
+    relation(targetSectionName: string, targetNaming?: any): RelationInfo {
         if (_.isNullOrUndefined(targetNaming)) {
-            var dnInfo = this.meta.root.breakDn(targetSectionName);
+            const dnInfo = this.meta.root.breakDn(targetSectionName);
             targetSectionName = dnInfo.metaName;
             targetNaming = dnInfo.naming;
         }
 
-        var relationInfo = new RelationInfo(this._item.dn);
+        const relationInfo = new RelationInfo(this._item.dn);
         relationInfo._setupSource(this._item.meta.name, this._item.naming);
         relationInfo._setupTarget(targetSectionName, targetNaming);
         this._relations.push(relationInfo);
         return relationInfo;
     }
 
-    inverseRelation(sourceSectionName, sourceNaming)
-    {
+    inverseRelation(sourceSectionName: string, sourceNaming?: any): RelationInfo {
         if (_.isNullOrUndefined(sourceNaming)) {
-            var dnInfo = this.meta.root.breakDn(sourceSectionName);
+            const dnInfo = this.meta.root.breakDn(sourceSectionName);
             sourceSectionName = dnInfo.metaName;
             sourceNaming = dnInfo.naming;
         }
 
-        var relationInfo = new RelationInfo(this._item.dn);
+        const relationInfo = new RelationInfo(this._item.dn);
         relationInfo._setupSource(sourceSectionName, sourceNaming);
         relationInfo._setupTarget(this._item.meta.name, this._item.naming);
         this._relations.push(relationInfo);
         return relationInfo;
     }
 }
-
-module.exports = RelationConstructor;

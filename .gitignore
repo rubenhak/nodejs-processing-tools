@@ -39,3 +39,7 @@ coverage
 # dotenv environment variables file
 .env
 .qavor/
+
+# TypeScript build output
+dist
+*.tsbuildinfo

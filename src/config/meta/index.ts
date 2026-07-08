@@ -1,101 +1,98 @@
-const Promise = require('the-promise');
-const _ = require('the-lodash');
-const fs = require('fs');
-const Path = require('path');
+import _ from 'the-lodash';
+import * as fs from 'fs';
+import * as Path from 'path';
 
-const ConfigSectionMeta = require('./section');
+import { ConfigSectionMeta } from './section';
+import { ILogger } from '../../logger';
 
-class ConfigMeta
-{
-    constructor(logger)
-    {
+export interface DnInfo {
+    metaName: string;
+    meta: ConfigSectionMeta;
+    naming: string[];
+}
+
+export class ConfigMeta {
+    private _logger: ILogger;
+    private _sections: Record<string, ConfigSectionMeta>;
+
+    constructor(logger: ILogger) {
         this._logger = logger;
         this._sections = {};
     }
 
-    get logger() {
+    get logger(): ILogger {
         return this._logger;
     }
 
-    get sections() {
+    get sections(): ConfigSectionMeta[] {
         return _.values(this._sections);
     }
 
-    get(name)
-    {
+    get(name: string): ConfigSectionMeta {
         if (name in this._sections) {
             return this._sections[name];
         }
         throw new Error('Invalid section ' + name + ' provided.');
-        return null;
     }
 
-    tryGet(name)
-    {
+    tryGet(name: string): ConfigSectionMeta | null {
         if (name in this._sections) {
             return this._sections[name];
         }
         return null;
     }
 
-    section(name)
-    {
+    section(name: string): ConfigSectionMeta {
         if (name in this._sections) {
             return this._sections[name];
         }
-        var section = new ConfigSectionMeta(this, name);
+        const section = new ConfigSectionMeta(this, name);
         this._sections[name] = section;
         return section;
     }
 
-    constructDn(metaName, naming)
-    {
+    constructDn(metaName: string, naming: any): string {
         if (!_.isArray(naming)) {
             naming = [naming];
         }
 
-        var newNaming = [];
-        for (var x of naming) {
-            if (typeof x !== 'undefined' && x !== null)
-            {
+        const newNaming: string[] = [];
+        for (let x of naming) {
+            if (typeof x !== 'undefined' && x !== null) {
                 x = x.toString();
                 if (x.indexOf('-') >= 0 || x.indexOf('[') >= 0 || x.indexOf(']') >= 0) {
                     x = '[' + x + ']';
                 }
-            }
-            else
-            {
-                this._logger.error('Invalid naming: %s', metaName, naming );
+            } else {
+                this._logger.error('Invalid naming: %s', metaName, naming);
                 throw new Error('Invalid naming: ' + metaName);
-                x = 'NULL';
             }
             newNaming.push(x);
         }
 
-        var namingStr = newNaming.join('-');
+        const namingStr = newNaming.join('-');
         return metaName + '://' + namingStr;
     }
 
-    breakDn(dn)
-    {
-        var re = /^([\w-]+):\/\/(\S*)/;
-        var matches = dn.match(re);
+    breakDn(dn: string): DnInfo | null {
+        const re = /^([\w-]+):\/\/(\S*)/;
+        const matches = dn.match(re);
         if (!matches) {
             this._logger.error('Could not split dn: %s', dn);
             return null;
         }
-        var metaName = matches[1];
-        var namingStr = matches[2];
+        const metaName = matches[1];
+        const namingStr = matches[2];
 
-        var naming = [];
-        var isWordStarted = false;
-        var curr = '';
-        var level = 0;
-        var processedStr = '';
-        for (var ch of namingStr) {
+        const naming: string[] = [];
+        let isWordStarted = false;
+        let curr = '';
+        let level = 0;
+        let processedStr = '';
+        for (const ch of namingStr) {
             processedStr = processedStr + ch;
-            var realSymbol = true;
-            var wordEnd = false;
+            let realSymbol = true;
+            let wordEnd = false;
 
             if (ch == '[') {
                 if (level == 0) {
@@ -153,20 +150,18 @@ class ConfigMeta
         return {
             metaName: metaName,
             meta: this.get(metaName),
-            naming: naming
+            naming: naming,
         };
     }
 
-    static load(normalizedPaths, logger, context)
-    {
-        var configMeta = new ConfigMeta(logger);
-        for(var normalizedPath of normalizedPaths)
-        {
+    static load(normalizedPaths: string[], logger: ILogger, context: any): ConfigMeta {
+        const configMeta = new ConfigMeta(logger);
+        for (const normalizedPath of normalizedPaths) {
             fs.readdirSync(normalizedPath).forEach((file) => {
-                var includePath = Path.join(normalizedPath, file);
-                var metaName = _.replace(file, '.js', '');
-                var metaSection = configMeta.section(metaName);
-                var metaSectionInit = require(includePath);
+                const includePath = Path.join(normalizedPath, file);
+                const metaName = _.replace(file, '.js', '');
+                const metaSection = configMeta.section(metaName);
+                const metaSectionInit = require(includePath);
                 metaSectionInit(metaSection, logger, context);
                 metaSection.done();
             });
@@ -174,18 +169,14 @@ class ConfigMeta
         return configMeta;
     }
 
-    static validateNaming(naming)
-    {
+    static validateNaming(naming: any): void {
         if (!_.isArray(naming)) {
             naming = [naming];
         }
-        for(var x of naming)
-        {
+        for (const x of naming) {
             if (_.isNullOrUndefined(x)) {
                 throw new Error('Invalid naming: ' + JSON.stringify(naming));
             }
         }
     }
 }
-
-module.exports = ConfigMeta;

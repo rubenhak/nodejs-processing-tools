@@ -2,12 +2,16 @@
   "name": "processing-tools",
   "version": "1.0.125",
   "description": "Library contains variety of tools to help with data processing.",
-  "main": "dependency-processor.js",
+  "main": "dist/index.js",
+  "types": "dist",
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
-    "build": "echo 'no build step (plain JS)'",
-    "test": "mocha 'test/**/*.js'",
-    "format": "prettier --write '*.js' 'config/**/*.js' 'test/**/*.js'",
-    "format-check": "prettier --check '*.js' 'config/**/*.js' 'test/**/*.js'",
+    "build": "tsc",
+    "test": "env TS_NODE_COMPILER_OPTIONS='{\"module\": \"commonjs\" }' mocha -r ts-node/register 'test/**/*.ts'",
+    "format": "prettier --write ./src/ ./test/",
+    "format-check": "prettier --check ./src/ ./test/",
     "lint": "eslint"
   },
   "repository": {
@@ -32,11 +36,17 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^26.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.63.0",
+    "@typescript-eslint/parser": "^8.63.0",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "mocha": "^11.7.6",
     "prettier": "^3.9.4",
-    "should": "^13.2.3"
+    "should": "^13.2.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
   },
   "pnpm": {
     "overrides": {
