@@ -1,6 +1,6 @@
 {
   "name": "processing-tools",
-  "version": "1.0.125",
+  "version": "2.0.0",
   "description": "Library contains variety of tools to help with data processing.",
   "main": "dist/index.js",
   "types": "dist",
@@ -37,7 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/mocha": "^10.0.10",
-    "@types/node": "^26.1.0",
+    "@types/node": "^26.1.1",
     "@typescript-eslint/eslint-plugin": "^8.63.0",
     "@typescript-eslint/parser": "^8.63.0",
     "eslint": "^10.6.0",
